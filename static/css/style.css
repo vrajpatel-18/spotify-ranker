@@ -42,13 +42,50 @@ body {
     margin-top: 30px;
 }
 
+.search-type-container {
+    width: 25%;
+    height: 60px;
+    line-height: 42px;
+    margin: 0 auto;
+    margin-top: 5px;
+}
+
+.search-type {
+    width: 49%;
+    height: 100%;
+    margin-left: 1%;
+    margin-right: 1%;
+    margin-top: 12px;
+    border-radius: 5px;
+    background-color: #18181C;
+}
+
+.search-type-inner {
+    width: 70%;
+    height: 70%;
+    margin: 0 auto;
+    margin-top: 7.5%;
+    border-radius: 30px;
+}
+.search-type-inner:hover {
+    cursor: pointer;
+    background-color: white;
+    color: black;
+    transition: .3s;
+
+}
+.search-type-inner.active {
+    background-color: #1BD760;
+    color: black;
+}
+
 .home-search {
     display: flex;
     align-items: center;
     width: 50%;
     height: 70px;
     margin: 0 auto;
-    margin-top: 50px;
+    margin-top: 10px;
     background-color: #18181C;
     border-radius: 5px;
 }
@@ -92,7 +129,7 @@ body {
 .home-results {
     width: 50%;
     margin: 0 auto;
-    max-height: 520px;
+    max-height: 510px;
     overflow-y: scroll;
     border-top: 5px solid #111112;
 }
