@@ -7,7 +7,8 @@ document.addEventListener('keydown', function(event) {
 
 let lastSearch = "";
 let lastTerm = "";
-let currTerm = "artist";
+let currTerm = "album";
+sessionStorage.setItem('type', currTerm);
 let searchTerm, searchType = "";
 function search() {
     let searchValue = document.getElementById("search").value;
@@ -16,8 +17,8 @@ function search() {
         lastTerm = currTerm;
         searchTerm = searchValue;
         searchType = currTerm;
-        console.log(searchValue, searchType)
         fillResults();
+        buildResultEventListeners();
     }
 }
 
@@ -29,6 +30,7 @@ searchOptions.forEach(function (option) {
         let name = option.innerHTML;
         if (name.toLowerCase() != currTerm) { // user changed options
             currTerm = name.toLowerCase();
+            sessionStorage.setItem('type', currTerm);
             clearResults();
             search();
         }
@@ -69,7 +71,7 @@ function fillResults() {
             let resultContainer = document.querySelector('.home-results');
             data['artists'].forEach(function (artist) {
                 let htmlData = `
-                <div id="${artist['id']}" class="home-results-item">
+                <a href="/ranker"><div id="${artist['id']}" class="home-results-item">
                     <img class="home-results-item-img" src="${artist['img']}">
                     <div class="home-results-item-text">
                         <h2 class="home-results-item-text-title">${artist['name']}</h2>
@@ -78,16 +80,17 @@ function fillResults() {
                             <h6 class="home-results-item-text-desc2"></h6>
                         </div>
                     </div>
-                </div>
+                </div></a>
                 `;
                 resultContainer.insertAdjacentHTML('beforeend', htmlData);
+                buildResultEventListeners()
             });
         } else if ('albums' in data) {
             let resultContainer = document.querySelector('.home-results');
             data['albums'].forEach(function (album) {
                 let artists = album['artists'].join(', ');
                 let htmlData = `
-                <div id="${album['id']}" class="home-results-item">
+                <a href="/ranker"><div id="${album['id']}" class="home-results-item">
                     <img class="home-results-item-img" src="${album['img']}">
                     <div class="home-results-item-text">
                         <h2 class="home-results-item-text-title">${album['name']}</h2>
@@ -96,10 +99,25 @@ function fillResults() {
                             <h6 class="home-results-item-text-desc2">${artists}</h6>
                         </div>
                     </div>
-                </div>
+                </div></a>
                 `;
                 resultContainer.insertAdjacentHTML('beforeend', htmlData);
+                buildResultEventListeners()
             });
         }
+    });
+}
+
+
+function buildResultEventListeners() {
+    let results = document.querySelectorAll('.home-results-item');
+    results.forEach(function (result) {
+        result.addEventListener('mouseover', function (e) {
+            sessionStorage.setItem('id', result.id);
+            sessionStorage.setItem('name', result.querySelector('.home-results-item-text-title').innerHTML);
+            sessionStorage.setItem('changed', 'true');
+            sessionStorage.setItem('leftHTML', 'null');
+            sessionStorage.setItem('rightHTML', 'null');
+        });
     });
 }

@@ -45,6 +45,7 @@ body {
     margin-bottom: 0;
 }
 
+
 .home-desc {
     font-size: 24px;
     text-align: center;
@@ -126,7 +127,7 @@ body {
     font-size: 18px;
     font-weight: 500;
     background-color: #1BD760;
-    color: white;
+    color: black;
 }
 .home-search button:hover {
     cursor: pointer;
@@ -135,6 +136,10 @@ body {
     transition: .5s;
 }
 
+.home-results a {
+    text-decoration: none;
+    color: white;
+}
 .home-results {
     width: 50%;
     margin: 0 auto;
@@ -200,7 +205,12 @@ body {
 
 
 
-
+.ranker-navbar.home {
+    background-color: transparent;
+    height: 150px;
+    box-shadow: none;
+    z-index: 200 !important;
+}
 
 
 .ranker-navbar {
@@ -216,6 +226,55 @@ body {
     width: 100%;
     margin: 0 auto;
     font-size: 54px !important;
+    font-weight: 700;
+}
+.navbar-title:hover {
+    cursor: pointer;
+}
+.navbar a {
+    text-decoration: none;
+    margin: 0 auto;
+}
+
+
+.account {
+    position: absolute;
+    top: 30%;
+    right: 3%;
+    display: flex;
+    align-items: center;
+    font-family: 'Inter', sans-serif !important;
+    color: white;
+    font-size: 20px;
+    transition: .6s
+}
+.account-text {
+    margin-top: 6px;
+}
+.signed-out::after {
+    content: '';
+    width: 0%;
+    height: 2px;
+    display: block;
+    background: white;
+    margin: 4px auto;
+    transition: 0.5s;
+}
+
+.account:hover {
+    cursor: pointer;
+}
+
+.signed-out:hover::after {
+    width: 100%;
+}
+
+.account-icon {
+    object-fit: cover;
+    border-radius: 50%;
+    width: 50px;
+    margin-left: 12px;
+    margin-right: 5px;
 }
 
 
@@ -544,4 +603,28 @@ body {
     background-color: white;
     color: black;
     transition: .3s;
+}
+
+.list-options-popup {
+    opacity: 1;
+    background-color: #18181C;
+    border: 1px solid #1BD760;
+    border-radius: 5px;
+    width: 50%;
+    height: 100px;
+    position: absolute;
+    left: 25%;
+    bottom: 90px;
+}
+.list-options-popup h5 {
+    font-size: 24px;
+    margin: 0 auto;
+    text-align: center;
+    margin-top: 15px;
+    line-height: 60px;
+}
+.list-options-popup.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transition: 1s;
 }

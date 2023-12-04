@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, url_for, session, redirect
 import api
+
 
 app = Flask(__name__)
 
@@ -25,6 +26,28 @@ def getAlbums():
         search = request.form['search']
         result = api.getAlbums(search)
         return jsonify(result)
+    
+@app.route('/artist-songs', methods=['POST'])
+def getArtistSongs():
+    if request.method == 'POST':
+        search = request.form['search']
+        result = api.getArtistSongs(search)
+        return jsonify(result)
+    
+@app.route('/album-songs', methods=['POST'])
+def getAlbumSongs():
+    if request.method == 'POST':
+        search = request.form['search']
+        result = api.getAlbumSongs(search)
+        return jsonify(result)
+    
+@app.route('/test', methods=['POST'])
+def test():
+    if request.method == 'POST':
+        search = request.form['search']
+        result = api.getAllPlaylistSongs('6YSPNOhpq3T3NlxrsSNnMd')
+        return jsonify(result)
+
 
 
 
