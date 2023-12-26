@@ -11,36 +11,30 @@ client_secret_key = os.environ.get("CLIENT_SECRET")
 
 
 # CHECK IF NEW TOKEN NEEDS TO BE GENERATED
-token_expired = False
 access_token = ''
-with open('token.json', 'r', encoding='utf-8') as f:
+url = "https://accounts.spotify.com/api/token"
+headers = {
+    "Content-Type": "application/x-www-form-urlencoded"
+}
+data = {
+    "grant_type": "client_credentials",
+    "client_id": client_id_key,
+    "client_secret": client_secret_key
+}
+
+response = requests.post(url, headers=headers, data=data)
+
+if response.status_code == 200:
+    token_data = response.json()
+    access_token = str(token_data['access_token'])
+    with open('token.json', 'w', encoding='utf-8') as f:
+        json.dump(token_data, f, ensure_ascii=False, indent=4)
+else:
+    print(f"Token request failed with status code {response.status_code}")
+
+with open('token.json', 'r') as f:
     token_data = json.load(f)
-    if token_data['expire_time'] < time.time():
-        token_expired = True
-    access_token = token_data['access_token']
-    
-if token_expired:
-    url = "https://accounts.spotify.com/api/token"
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-    data = {
-        "grant_type": "client_credentials",
-        "client_id": client_id_key,
-        "client_secret": client_secret_key
-    }
-
-    response = requests.post(url, headers=headers, data=data)
-
-    if response.status_code == 200:
-        token_data = response.json()
-        token_data['expire_time'] = time.time() + token_data['expires_in']
-        access_token = token_data['access_token']
-        with open('token.json', 'w', encoding='utf-8') as f:
-            json.dump(token_data, f, ensure_ascii=False, indent=4)
-    else:
-        print(f"Token request failed with status code {response.status_code}")
-
+    access_token = str(token_data['access_token'])
 
 
 
@@ -59,8 +53,9 @@ def getSongPopularity(songID):
 
 
 def getArtists(search):
+    search = search.replace("#", "")
     print("Get Artists", search)
-    searchLimit = '20'
+    searchLimit = '50'
     searchType = 'artist'
     url = 'https://api.spotify.com/v1/search?q=' + search + '&type=' + searchType + '&limit=' + searchLimit
     headers = {
@@ -71,9 +66,11 @@ def getArtists(search):
 
     artists = []
     data = {}
+    if artist_data['artists']['total'] == 0:
+        return json.dumps(data, indent=4)
     for artist in artist_data['artists']['items']:
         images = artist['images']
-        if (len(images) > 0) and len(artists) < 10:
+        if (len(images) > 0) and len(artists) < 25:
             curr_artist = {}
             curr_artist['name'] = artist['name']
             curr_artist['id'] = artist['id']
@@ -90,8 +87,9 @@ def getArtists(search):
     
     
 def getAlbums(search):
+    search = search.replace("#", "")
     print("Get Albums", search)
-    searchLimit = '20'
+    searchLimit = '50'
     searchType = 'album'
     url = 'https://api.spotify.com/v1/search?q=' + search + '&type=' + searchType + '&limit=' + searchLimit
     headers = {
@@ -102,9 +100,11 @@ def getAlbums(search):
 
     albums = []
     data = {}
+    if album_data['albums']['total'] == 0:
+        return json.dumps(data, indent=4)
     for album in album_data['albums']['items']:
         images = album['images']
-        if (len(images) > 0) and len(albums) < 10:
+        if (len(images) > 0) and len(albums) < 25:
             curr_album = {}
             curr_album['name'] = album['name']
             curr_album['id'] = album['id']
@@ -123,35 +123,81 @@ def getAlbums(search):
     return formatted_json
 
 
-def getPlaylists(search):
-    print("Get Playlists", search)
-    searchLimit = '20'
-    searchType = 'playlist'
-    url = 'https://api.spotify.com/v1/search?q=' + search + '&type=' + searchType + '&limit=' + searchLimit
+# def getPlaylists(search):
+#     search = search.replace("#", "")
+#     print("Get Playlists", search)
+#     searchLimit = '20'
+#     searchType = 'playlist'
+#     url = 'https://api.spotify.com/v1/search?q=' + search + '&type=' + searchType + '&limit=' + searchLimit
+#     headers = {
+#         'Authorization': 'Bearer ' + access_token
+#     }
+#     playlist_response = requests.get(url, headers=headers)
+#     playlist_data = playlist_response.json()
+
+#     playlists = []
+#     data = {}
+#     if playlist_data['playlists']['total'] == 0:
+#         return json.dumps(data, indent=4)
+#     for playlist in playlist_data['playlists']['items']:
+#         images = playlist['images']
+#         if (len(images) > 0) and len(playlists) < 10:
+#             curr_playlist = {}
+#             curr_playlist['name'] = playlist['name']
+#             curr_playlist['id'] = playlist['id']
+#             curr_playlist['img'] = playlist['images'][0]['url']
+#             curr_playlist['owner'] = playlist['owner']['display_name']
+#             playlists.append(curr_playlist)
+    
+#     data['playlists'] = playlists
+    
+#     json_data = data
+#     formatted_json = json.dumps(json_data, indent=4)
+#     return formatted_json
+
+def getUserPlaylists(offset):
+    print("Get User Playlists, Offset=", offset)
+    url = 'https://api.spotify.com/v1/me/playlists?offset=' + offset
     headers = {
         'Authorization': 'Bearer ' + access_token
     }
     playlist_response = requests.get(url, headers=headers)
     playlist_data = playlist_response.json()
-
+    
     playlists = []
     data = {}
-    for playlist in playlist_data['playlists']['items']:
-        images = playlist['images']
-        if (len(images) > 0) and len(playlists) < 10:
-            curr_playlist = {}
-            curr_playlist['name'] = playlist['name']
-            curr_playlist['id'] = playlist['id']
-            curr_playlist['img'] = playlist['images'][0]['url']
-            curr_playlist['owner'] = playlist['owner']['display_name']
-            playlists.append(curr_playlist)
+    for playlist in playlist_data['items']:
+        curr_playlist = {}
+        curr_playlist['name'] = playlist['name']
+        curr_playlist['id'] = playlist['id']
+        curr_playlist['img'] = playlist['images'][0]['url']
+        curr_playlist['owner'] = playlist['owner']['display_name']
+        playlists.append(curr_playlist)
     
     data['playlists'] = playlists
     
     json_data = data
     formatted_json = json.dumps(json_data, indent=4)
     return formatted_json
+
+def getAllUserPlaylists():
+    print("Get All User Playlists")
+    offset = 0
+    playlists = []
+    while True:
+        playlist_data = json.loads(getUserPlaylists(str(offset)))
+        if len(playlist_data['playlists']) == 0:
+            break
+        for playlist in playlist_data['playlists']:
+            playlists.append(playlist)
+        offset += 50
     
+    data = {}
+    data['playlists'] = playlists
+    
+    json_data = data
+    formatted_json = json.dumps(json_data, indent=4)
+    return formatted_json
 
 
 def getAlbumSongs(albumID):
@@ -186,43 +232,8 @@ def getAlbumSongs(albumID):
 
 
 
-def findLocalSongInfo(songName, albumName):
-    data = {}
-    print("Find Local Song Info", songName, albumName)
-    
-    url = 'https://api.spotify.com/v1/search?q=' + albumName + '&type=album&limit=10'
-    headers = {
-        'Authorization': 'Bearer ' + access_token
-    }
-    album_response = requests.get(url, headers=headers)
-    album_data = album_response.json()
-    
-    if len(album_data['albums']['items']) == 0:
-        return None
-    else:
-        for album in album_data['albums']['items']:
-            str1 = album['name'].lower()
-            str2 = albumName.lower()
-            if str1 in str2 or str2 in str1:
-                rawAlbumData = getAlbumSongs(album['id'])
-                albumData = json.loads(rawAlbumData)
-                for song in albumData['songs']:
-                    str1 = song['name'].lower()
-                    str2 = songName.lower()
-                    if str1 in str2 or str2 in str1:
-                        data['img'] = song['img']
-                        data['date'] = song['date']
-                        data['id'] = song['id']
-                        data['artists'] = song['artists']
-                        data['album'] = album['name']
-                        json_data = data
-                        formatted_json = json.dumps(json_data, indent=4)
-                        return formatted_json
-    return None
-
-
 def getPlaylistSongs(playlistID, offset):
-    print("Get Playlist Songs", playlistID)
+    print("Get Playlist Songs", playlistID, access_token)
     url = 'https://api.spotify.com/v1/playlists/' + playlistID + '/tracks?limit=100&offset=' + str(offset)
     headers = {
         'Authorization': 'Bearer ' + access_token
@@ -243,16 +254,6 @@ def getPlaylistSongs(playlistID, offset):
             artists.append(artist['name'])
         curr_song['artists'] = artists
         if song['is_local']:
-            # local_data = findLocalSongInfo(song['track']['name'], song['track']['album']['name'])
-            # if local_data:
-            #     loaded_data = json.loads(local_data)
-            #     curr_song['img'] = loaded_data['img']
-            #     curr_song['id'] = loaded_data['id']
-            #     curr_song['date'] = loaded_data['date']
-            #     curr_song['album'] = loaded_data['album']
-            #     curr_song['artists'] = loaded_data['artists']
-            # else:
-            #     curr_song['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
             curr_song['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
         else:
             curr_song['img'] = song['track']['album']['images'][0]['url']
@@ -285,7 +286,8 @@ def getAllPlaylistSongs(playlistID):
     return formatted_json
 
 
-# print(getAllPlaylistSongs('6YSPNOhpq3T3NlxrsSNnMd'))
+# print(getAllPlaylistSongs('6YSPNOhpq3T3NlxrsSNnMd')) # best
+# print(getAllPlaylistSongs('2cjoMhH9cyvwSvLv22qoTW')) # DBR
 
 
 

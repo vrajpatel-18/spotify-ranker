@@ -195,6 +195,18 @@ body {
     text-overflow: ellipsis;
 }
 
+.no-results {
+    width: 100%;
+    text-align: center;
+    margin-top: 50px;
+}
+.no-results.ranker {
+    padding-top: 350px;
+}
+
+
+
+
 
 
 
@@ -332,7 +344,7 @@ body {
     height: 90%;
     background-color: #111112;
     margin: 0 auto;
-    padding-top: 18px;
+    padding-top: 74px;
     overflow-y: scroll;
     display: block;
 }
@@ -627,4 +639,157 @@ body {
     opacity: 0;
     visibility: hidden;
     transition: 1s;
+}
+
+
+.playlist-popup {
+    opacity: 1;
+    background-color: #18181C;
+    border: 1px solid #1BD760;
+    border-radius: 5px;
+    width: 60%;
+    height: 80px;
+    margin: 0 auto;
+    margin-top: 20px;
+}
+
+.playlist-popup h5 {
+    font-size: 18px;
+    margin: 0 auto;
+    text-align: center;
+    margin-top: 15px;
+    line-height: 45px;
+}
+
+.playlist-popup.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transition: 1s;
+}
+
+
+.search-bar {
+    width: 100%;
+    height: 70px;
+    margin: 0 auto;
+    background-color: #111112;
+    position: absolute;
+    align-items: center;
+    border: none;
+    padding-left: 30px;
+    padding-top: 10px;
+    color: white;
+    box-shadow: -2px 5px 10px #111112;
+    font-size: 16px;
+}
+.search-bar:focus {
+    cursor: auto;
+    outline: none;
+}
+.search-bar::placeholder {
+    font-style: italic;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* SPINNER */
+
+.spinner {
+    width: 100%;
+    text-align: center;
+}
+.spinner.ranker {
+    padding-top: 250px;
+}
+
+.loader {
+    font-size: 10px;
+    margin: 50px auto;
+    margin-top: 40px;
+    margin-bottom: 30px;
+    text-indent: -9999em;
+    width: 7em;
+    height: 7em;
+    border-radius: 50%;
+    background: #ffffff;
+    background: -moz-linear-gradient(left, #ffffff 10%, rgba(255, 255, 255, 0) 42%);
+    background: -webkit-linear-gradient(left, #ffffff 10%, rgba(255, 255, 255, 0) 42%);
+    background: -o-linear-gradient(left, #ffffff 10%, rgba(255, 255, 255, 0) 42%);
+    background: -ms-linear-gradient(left, #ffffff 10%, rgba(255, 255, 255, 0) 42%);
+    background: linear-gradient(to right, #ffffff 10%, rgba(255, 255, 255, 0) 42%);
+    position: relative;
+    -webkit-animation: load3 1.4s infinite linear;
+    animation: load3 1.4s infinite linear;
+    -webkit-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+.loader:before {
+    width: 50%;
+    height: 50%;
+    background: #ffffff;
+    border-radius: 100% 0 0 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    content: '';
+}
+
+.loader:after {
+    background: #111112;
+    width: 75%;
+    height: 75%;
+    border-radius: 50%;
+    content: '';
+    margin: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+@-webkit-keyframes load3 {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes load3 {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
 }

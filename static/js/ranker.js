@@ -1,20 +1,47 @@
-// import { Sortable, AutoScroll } from 'sortablejs';
+// Check if user is logged in
+if (sessionStorage.getItem('loggedIn') != 'true') {
+    function getUserInfo(callback) {
+        $.ajax({
+            type: 'GET',
+            url: `/user-info`,
+            success: function (data) {
+                if (JSON.stringify(data) !== '{}') {
+                    console.log(data);
+                    callback(data);
+                } else {
+                    console.log("data not found");
+                }
+            }
+        });
+    }
+    getUserInfo(function (data) {
+        console.log("logged in");
+        let accountEl = document.querySelector('.account');
+        accountEl.querySelector('.account-text').innerHTML = data['display_name'];
+        accountEl.querySelector('.account-icon').src = data['images'][1]['url'];
+        sessionStorage.setItem('loggedIn', 'true');
+        sessionStorage.setItem('accountName', data['display_name']);
+        sessionStorage.setItem('accountImage', data['images'][1]['url']);
+    });
+} else {
+    let accountEl = document.querySelector('.account');
+    accountEl.querySelector('.account-text').innerHTML = sessionStorage.getItem('accountName');
+    accountEl.querySelector('.account-icon').src = sessionStorage.getItem('accountImage');
+}
 
-// Sortable.mount(new AutoScroll());
 
-
-
-
-
+let originalSongs;
 let cards = document.querySelector('.songs-container');
-let sortable2 = new Sortable(cards, {
+let songList = new Sortable(cards, {
     group: 'shared',
+    draggable: '.list-song',
     animation: 200,
     ghostClass: 'hidden',
     dragClass: 'active',
     forceFallback: true,
     onAdd: function (evt) { // when song moves from right to left
         removeNumber();
+        addSongToOriginal(evt.item);
         assignDoubleClick();
     },
     onEnd: function (evt) {
@@ -23,14 +50,17 @@ let sortable2 = new Sortable(cards, {
 });
 
 let list = document.querySelector('.list-song-container');
-let sortable = new Sortable(list, {
+let rankList = new Sortable(list, {
     group: 'shared',
+    draggable: '.list-song',
     animation: 200,
     ghostClass: 'hidden',
     dragClass: 'active',
     forceFallback: true,
     onAdd: function (evt) { // when song moves from left to right
         addNumber();
+        removeSongFromOriginal(evt.item);
+        updateData();
     },
     onEnd: function (evt) {
         updateData();
@@ -99,6 +129,7 @@ function addAllSongs() {
         `;
         document.querySelector('.list-song-container').insertAdjacentHTML('beforeend', htmlData);
         song.remove();
+        removeSongFromOriginal(song);
     });
     // add all numbers
     for (let i = 1; i <= length; i++) {
@@ -129,61 +160,104 @@ function removeAllSongs() {
         `;
         document.querySelector('.songs-container').insertAdjacentHTML('beforeend', htmlData);
         song.remove();
+        addSongToOriginal(song);
     });
     assignDoubleClick();
     updateData();
 }
 
-function moveRight(song) {
-    song.addEventListener('dblclick', function (e) {
+document.querySelector(".search-bar").addEventListener("input", function () {
+    updateSearch();
+})
+
+function updateSearch() {
+    let search = document.querySelector(".search-bar").value;
+    let items = document.querySelector('.songs-container');
+    while (items.firstChild) items.removeChild(items.firstChild);
+    let newSongs = [];
+    originalSongs.forEach(function (song) {
+        let songInfo = song.classList.value.replace('list-song ', '') + " " + song.querySelector('.list-song-title').innerHTML + " " + song.querySelector('.list-song-artist').innerHTML;
+        songInfo.replace(',', '').replace('.', '').replace('(', '').replace(')', '');
+        if (songInfo.toLowerCase().includes(search.toLowerCase())) {
+            newSongs.push(song);
+        }
+    });
+    newSongs.forEach(function (song) {
+        document.querySelector('.songs-container').appendChild(song);
+    });
+    assignDoubleClick();
+}
+
+function removeSongFromOriginal(songEl) {
+    let newSongs = [];
+    if (originalSongs) {
+        originalSongs.forEach(function (song) {
+            console.log(typeof song, song);
+            if (songEl.id != song.id) {
+                newSongs.push(song);
+            }
+        });
+        originalSongs = newSongs;
+        console.log(originalSongs);
+        sessionStorage.setItem('originalSongs', JSON.stringify(originalSongs.map(element => element.outerHTML)));
+    }
+    console.log(originalSongs);
+}
+
+function addSongToOriginal(songEl) {
+    originalSongs.push(songEl);
+}
+
+function doubleClick(song) {
+    $(song).off("dblclick");
+    $(song).on("dblclick", function () {
         let htmlData = `
             <div id="${song.id}" class="${song.classList}">
-                <div class="list-song-img-container"><img src="${song.querySelector(".list-song-img").src}" class="list-song-img"></div>
+                <div class="list-song-img-container"><img src="${$(song).find(".list-song-img").attr("src")}" class="list-song-img"></div>
                 <div class="list-song-info">
-                    <h3 class="list-song-title">${song.querySelector(".list-song-title").innerHTML}</h3>
+                    <h3 class="list-song-title">${$(song).find(".list-song-title").html()}</h3>
                     <h4 class="list-song-break">|</h4>
-                    <h6 class="list-song-artist">${song.querySelector(".list-song-artist").innerHTML}</h4>
+                    <h6 class="list-song-artist">${$(song).find(".list-song-artist").html()}</h4>
                 </div>
                 <div class="list-song-lines-container"><img src="../static/images/lines.png" class="list-song-lines"></div>
             </div>
-            `;
-        document.querySelector('.list-song-container').insertAdjacentHTML('beforeend', htmlData);
-        song.remove();
+        `;
+        $('.list-song-container').append(htmlData);
+        $(song).remove();
         addNumber();
-        updateData();
+        let el = document.createElement("div");
+        el.id = song.id;
+        removeSongFromOriginal(el);
     });
 }
 
+
 function assignDoubleClick() {
-    let songs = document.querySelector('.songs-container').querySelectorAll('.list-song');
-    songs.forEach(moveRight);
+    let songs = $('.songs-container').find('.list-song');
+    for (let i = 0; i < songs.length; i++) {
+        doubleClick(songs[i]);
+    }
 }
 
 
 function updateData() {
+    console.log("update data");
     sessionStorage.setItem('leftHTML', document.querySelector('.songs-container').innerHTML);
     sessionStorage.setItem('rightNumsHTML', document.querySelector('.list-number-container').innerHTML);
     sessionStorage.setItem('rightSongsHTML', document.querySelector('.list-song-container').innerHTML);
+    if (originalSongs) {
+        sessionStorage.setItem('originalSongs', JSON.stringify(originalSongs.map(element => element.outerHTML)));
+    }
 }
 
 
-// function getData(search, type, callback) {
-//     $.ajax({
-//         type: 'POST',
-//         url: `/${type}-songs`,
-//         data: { 'search': search },
-//         success: function (data) {
-//             data = JSON.parse(data);
-//             callback(data);
-//         }
-//     });
-// }
-
-
 function getData(search, type, callback) {
+    updateData();
+    console.log('loading...');
+    insertLoading();
     $.ajax({
         type: 'POST',
-        url: `/test`,
+        url: `/${type}-songs`,
         data: { 'search': search },
         success: function (data) {
             data = JSON.parse(data);
@@ -192,27 +266,46 @@ function getData(search, type, callback) {
     });
 }
 
+
+
 function buildSongs() {
     document.querySelector('.songs-container').innerHTML = '';
     getData(searchID, searchType, function (data) {
-        let resultContainer = document.querySelector('.songs-container');
-        data['songs'].forEach(function (song) {
-            let artists = song['artists'].join(', ');
-            let htmlData = `
-            <div id="${song['id']}" class="list-song ${song['album']}">
-                <div class="list-song-img-container"><img src="${song['img']}" class="list-song-img"></div>
-                <div class="list-song-info">
-                    <h3 class="list-song-title">${song['name']}</h3>
-                    <h4 class="list-song-break">|</h4>
-                    <h6 class="list-song-artist">${artists}</h4>
+        removeLoading();
+        if (data['songs'].length == 0) {
+            console.log('no songs');
+            insertNoResults();
+            updateData();
+        } else {
+            if (searchType == 'album') {
+                data['songs'].forEach(function (song) {
+                    song['album'] = "";
+                });
+            }
+            let resultContainer = document.querySelector('.songs-container');
+            data['songs'].forEach(function (song) {
+                let artists = song['artists'].join(', ');
+                let htmlData = `
+                <div id="${song['id']}" class="list-song ${song['album']}">
+                    <div class="list-song-img-container"><img src="${song['img']}" class="list-song-img"></div>
+                    <div class="list-song-info">
+                        <h3 class="list-song-title">${song['name']}</h3>
+                        <h4 class="list-song-break">|</h4>
+                        <h6 class="list-song-artist">${artists}</h4>
+                    </div>
+                    <div class="list-song-lines-container"><img src="../static/images/lines.png" class="list-song-lines"></div>
                 </div>
-                <div class="list-song-lines-container"><img src="../static/images/lines.png" class="list-song-lines"></div>
-            </div>
-            `;
-            resultContainer.insertAdjacentHTML('beforeend', htmlData);
-        });
-        sessionStorage.setItem('originalLeftHTML', resultContainer.innerHTML);
-        assignDoubleClick();
+                `;
+                resultContainer.insertAdjacentHTML('beforeend', htmlData);
+            });
+            assignDoubleClick();
+            console.log('done');
+            document.querySelector('.search-bar').classList.remove('hidden');
+            originalSongs = Array.from(document.querySelector('.songs-container').querySelectorAll('.list-song'));
+            console.log(originalSongs);
+            sessionStorage.setItem('originalSongs', JSON.stringify(originalSongs));
+            updateData();
+        }
     });
 }
 
@@ -249,7 +342,56 @@ if (sessionStorage.getItem("changed") == 'true') {
         document.querySelector('.list-song-container').innerHTML = sessionStorage.getItem('rightSongsHTML');
     } else {
         removeAllSongs();
-        document.querySelector('.songs-container').innerHTML = sessionStorage.getItem('originalLeftHTML');
     }
+    document.querySelector('.search-bar').classList.remove('hidden');
+    originalSongs = JSON.parse(sessionStorage.getItem("originalSongs")).map(htmlString => new DOMParser().parseFromString(htmlString, 'text/html').body.firstChild);
+    console.log(originalSongs);
     assignDoubleClick();
 }
+
+
+
+
+function insertLoading() {
+    let resultsBody = document.querySelector('.songs-container');
+    let htmlData = `
+        <div class="spinner ranker">
+            <div class="loader">Loading...</div>
+            <h2>Loading Songs</h2>
+        </div>
+    `;
+    resultsBody.insertAdjacentHTML('beforeend', htmlData);
+}
+
+function removeLoading() {
+    let loading = document.querySelector('.spinner');
+    if (loading) {
+        loading.remove();
+    }
+}
+
+function insertNoResults() {
+    let resultsBody = document.querySelector('.songs-container');
+    let htmlData = `
+        <div class="no-results ranker">
+            <h2>No Results Found</h2>
+        </div>
+    `;
+    resultsBody.insertAdjacentHTML('beforeend', htmlData);
+}
+
+function removeNoResults() {
+    let noResults = document.querySelector('.no-results');
+    if (noResults) {
+        noResults.remove();
+    }
+}
+
+
+
+document.querySelector('.list-options-save').addEventListener('click', function () {
+    let count = 0;
+    originalSongs.forEach(function (song) {
+        console.log(song.id)
+    });
+});

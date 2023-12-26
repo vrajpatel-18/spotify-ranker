@@ -11,14 +11,14 @@
 <body>
 
   <nav class="navbar navbar-expand-md navbar-dark fixed-top ranker-navbar home">
-      <a href="{{ url_for('index') }}"><div class="account">
+      <a href="{{ url_for('login') }}"><div class="account">
         <div class="account-text signed-out">Sign In</div>
         <img src="{{ url_for('static', filename='images/user.png') }}" class="account-icon">
       </div></a>
   </nav>
 
     <h1 class="home-title">Spotify Ranker</h1>
-    <p class="home-desc">Rank your favorite tracks from any artist, album, or your Spotify playlist!<br>Start by searching for an artist or album below ↓</p>
+    <p class="home-desc">Rank your favorite tracks from any album, artist, or your Spotify playlist!<br>Start by searching for an album, artist, or playlist below ↓</p>
     <div class="row mx-auto text-center align-items-center search-type-container">
         <div class="col search-type">
             <div class="search-type-inner active">Album</div>
@@ -31,11 +31,11 @@
         </div>
     </div>
     <div class="home-search">
-        <input id="search" type="text" placeholder="Search for an album">
+        <input id="search" type="text" placeholder="Search for album">
         <button id="searchButton">Search</button>
     </div>
     <div class="home-results">
-        
+
     </div>
 
 
