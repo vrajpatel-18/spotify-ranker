@@ -201,7 +201,7 @@ body {
     margin-top: 50px;
 }
 .no-results.ranker {
-    padding-top: 350px;
+    padding-top: 300px;
 }
 
 
@@ -719,7 +719,7 @@ body {
     text-align: center;
 }
 .spinner.ranker {
-    padding-top: 250px;
+    padding-top: 200px;
 }
 
 .loader {

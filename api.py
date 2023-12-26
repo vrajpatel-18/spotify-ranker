@@ -123,82 +123,6 @@ def getAlbums(search):
     return formatted_json
 
 
-# def getPlaylists(search):
-#     search = search.replace("#", "")
-#     print("Get Playlists", search)
-#     searchLimit = '20'
-#     searchType = 'playlist'
-#     url = 'https://api.spotify.com/v1/search?q=' + search + '&type=' + searchType + '&limit=' + searchLimit
-#     headers = {
-#         'Authorization': 'Bearer ' + access_token
-#     }
-#     playlist_response = requests.get(url, headers=headers)
-#     playlist_data = playlist_response.json()
-
-#     playlists = []
-#     data = {}
-#     if playlist_data['playlists']['total'] == 0:
-#         return json.dumps(data, indent=4)
-#     for playlist in playlist_data['playlists']['items']:
-#         images = playlist['images']
-#         if (len(images) > 0) and len(playlists) < 10:
-#             curr_playlist = {}
-#             curr_playlist['name'] = playlist['name']
-#             curr_playlist['id'] = playlist['id']
-#             curr_playlist['img'] = playlist['images'][0]['url']
-#             curr_playlist['owner'] = playlist['owner']['display_name']
-#             playlists.append(curr_playlist)
-    
-#     data['playlists'] = playlists
-    
-#     json_data = data
-#     formatted_json = json.dumps(json_data, indent=4)
-#     return formatted_json
-
-def getUserPlaylists(offset):
-    print("Get User Playlists, Offset=", offset)
-    url = 'https://api.spotify.com/v1/me/playlists?offset=' + offset
-    headers = {
-        'Authorization': 'Bearer ' + access_token
-    }
-    playlist_response = requests.get(url, headers=headers)
-    playlist_data = playlist_response.json()
-    
-    playlists = []
-    data = {}
-    for playlist in playlist_data['items']:
-        curr_playlist = {}
-        curr_playlist['name'] = playlist['name']
-        curr_playlist['id'] = playlist['id']
-        curr_playlist['img'] = playlist['images'][0]['url']
-        curr_playlist['owner'] = playlist['owner']['display_name']
-        playlists.append(curr_playlist)
-    
-    data['playlists'] = playlists
-    
-    json_data = data
-    formatted_json = json.dumps(json_data, indent=4)
-    return formatted_json
-
-def getAllUserPlaylists():
-    print("Get All User Playlists")
-    offset = 0
-    playlists = []
-    while True:
-        playlist_data = json.loads(getUserPlaylists(str(offset)))
-        if len(playlist_data['playlists']) == 0:
-            break
-        for playlist in playlist_data['playlists']:
-            playlists.append(playlist)
-        offset += 50
-    
-    data = {}
-    data['playlists'] = playlists
-    
-    json_data = data
-    formatted_json = json.dumps(json_data, indent=4)
-    return formatted_json
-
 
 def getAlbumSongs(albumID):
     print("Get Album Songs", albumID)
@@ -243,6 +167,11 @@ def getPlaylistSongs(playlistID, offset):
     
     songs = []
     data = {}
+    if 'items' not in playlist_data:
+        data['songs'] = songs
+        json_data = data
+        formatted_json = json.dumps(json_data, indent=4)
+        return formatted_json
     for song in playlist_data['items']:
         curr_song = {}
         curr_song['name'] = song['track']['name']
@@ -284,10 +213,6 @@ def getAllPlaylistSongs(playlistID):
     json_data = data
     formatted_json = json.dumps(json_data, indent=4)
     return formatted_json
-
-
-# print(getAllPlaylistSongs('6YSPNOhpq3T3NlxrsSNnMd')) # best
-# print(getAllPlaylistSongs('2cjoMhH9cyvwSvLv22qoTW')) # DBR
 
 
 

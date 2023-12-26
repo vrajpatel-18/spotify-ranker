@@ -5,12 +5,18 @@ import json
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from flask import Flask, request, url_for, session, redirect
+import os
+from dotenv import load_dotenv
 
+
+load_dotenv()
+client_id_key = os.environ.get("CLIENT_ID")
+client_secret_key = os.environ.get("CLIENT_SECRET")
 
 app = Flask(__name__)
 
 app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
-app.secret_key = 'YOUR_SECRET_KEY'
+app.secret_key = os.environ.get("APP_SECRET_KEY")
 TOKEN_INFO = 'token_info'
 
 @app.route('/')
@@ -52,12 +58,74 @@ def getAlbums():
         result = api.getAlbums(search)
         return jsonify(result)
     
+# @app.route('/playlist', methods=['POST'])
+# def getPlaylists():
+#     if request.method == 'POST':
+#         search = request.form['search']
+#         result = api.getAllUserPlaylists()
+#         return jsonify(result)
 @app.route('/playlist', methods=['POST'])
 def getPlaylists():
     if request.method == 'POST':
-        search = request.form['search']
-        result = api.getPlaylists(search)
-        return jsonify(result)
+        def getUserPlaylists(offset):
+            print("Get User Playlists, Offset=", offset)
+            try:
+                token_info = get_token()
+            except:
+                print("User not logged in")
+                data = {}
+                return jsonify(data)
+            
+            sp = spotipy.Spotify(auth=token_info['access_token'])
+            playlist_data = sp.current_user_playlists(50, offset)
+            playlists = []
+            data = {}
+            if playlist_data['total'] == 0:
+                return json.dumps(data, indent=4)
+            for playlist in playlist_data['items']:
+                curr_playlist = {}
+                curr_playlist['name'] = playlist['name']
+                curr_playlist['id'] = playlist['id']
+                if len(playlist['images']) > 0:
+                    curr_playlist['img'] = playlist['images'][0]['url']
+                else:
+                    curr_playlist['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
+                curr_playlist['owner'] = playlist['owner']['display_name']
+                playlists.append(curr_playlist)
+            
+            data['playlists'] = playlists
+            
+            json_data = data
+            formatted_json = json.dumps(json_data, indent=4)
+            return formatted_json
+
+    print("Get All User Playlists")
+    offset = 0
+    playlists = []
+    while True:
+        playlist_data = json.loads(getUserPlaylists(offset))
+        if len(playlist_data['playlists']) == 0:
+            break
+        for playlist in playlist_data['playlists']:
+            playlists.append(playlist)
+        offset += 50
+    
+    data = {}
+    data['playlists'] = playlists
+    
+    # implement search functionality
+    search = request.form['search']
+    if search != '':
+        filtered_playlists = []
+        for playlist in playlists:
+            if search.lower() in playlist['name'].lower():
+                filtered_playlists.append(playlist)
+        data['playlists'] = filtered_playlists
+    else:
+        data['playlists'] = playlists
+    json_data = data
+    formatted_json = json.dumps(json_data, indent=4)
+    return formatted_json
     
 @app.route('/artist-songs', methods=['POST'])
 def getArtistSongs():
@@ -113,8 +181,8 @@ def get_token():
 
 def create_spotify_oauth():
     return SpotifyOAuth(
-        client_id = '15eb06a1ff0a40bd95cc7c1522c5aaa3',
-        client_secret = '32ab0e56dae8427e9efe5dab273f78a4',
+        client_id = client_id_key,
+        client_secret = client_secret_key,
         redirect_uri = url_for('redirect_page', _external=True),
         scope='playlist-read-private playlist-read-collaborative user-read-private'
     )

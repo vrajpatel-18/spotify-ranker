@@ -42,6 +42,8 @@ if (sessionStorage.getItem('loggedIn') != 'true') {
         sessionStorage.setItem('accountName', data['display_name']);
         sessionStorage.setItem('accountImage', data['images'][1]['url']);
         sessionStorage.setItem('accountID', data['id']);
+        let popup = document.querySelector('.playlist-popup');
+        if (popup) popup.remove();
     });
 } else {
     console.log("logged in");
@@ -49,6 +51,8 @@ if (sessionStorage.getItem('loggedIn') != 'true') {
     let accountEl = document.querySelector('.account');
     accountEl.querySelector('.account-text').innerHTML = sessionStorage.getItem('accountName');
     accountEl.querySelector('.account-icon').src = sessionStorage.getItem('accountImage');
+    let popup = document.querySelector('.playlist-popup');
+    if (popup) popup.remove();
 }
 
 
@@ -69,9 +73,9 @@ let searchTerm, searchType = "";
 
 function search() {
     let searchValue = document.getElementById("search").value;
-    console.log(document.querySelector('.active').innerHTML);
-    if (!(document.querySelector('.active').innerHTML == "Playlist" && !loggedIn)) {
-        if (searchValue != "" && (searchValue != lastSearch || currTerm != lastTerm)) {
+    let type = document.querySelector('.active').innerHTML;
+    if (!(type == "Playlist" && !loggedIn)) {
+        if (((type != "Playlist" && searchValue != "") || type == "Playlist") && (searchValue != lastSearch || currTerm != lastTerm)) {
             insertLoading();
             removeNoResults();
             lastSearch = searchValue;
@@ -178,9 +182,13 @@ function fillResults() {
                 buildResultEventListeners()
             });
         } else if ('playlists' in data) {
-            let resultContainer = document.querySelector('.home-results');
-            data['playlists'].forEach(function (playlist) {
-                let htmlData = `
+            if (data['playlists'].length == 0) {
+                removeLoading();
+                insertNoResults();
+            } else {
+                let resultContainer = document.querySelector('.home-results');
+                data['playlists'].forEach(function (playlist) {
+                    let htmlData = `
                 <a href="/ranker"><div id="${playlist['id']}" class="home-results-item">
                     <img class="home-results-item-img" src="${playlist['img']}">
                     <div class="home-results-item-text">
@@ -192,9 +200,10 @@ function fillResults() {
                     </div>
                 </div></a>
                 `;
-                resultContainer.insertAdjacentHTML('beforeend', htmlData);
-                buildResultEventListeners()
-            });
+                    resultContainer.insertAdjacentHTML('beforeend', htmlData);
+                    buildResultEventListeners()
+                });
+            }
         } else {
             removeLoading();
             insertNoResults();
