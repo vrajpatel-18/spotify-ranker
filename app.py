@@ -62,20 +62,24 @@ def getAlbums():
 # def getPlaylists():
 #     if request.method == 'POST':
 #         search = request.form['search']
-#         result = api.getAllUserPlaylists()
+#         result = api.getPlaylists()
 #         return jsonify(result)
 @app.route('/playlist', methods=['POST'])
 def getPlaylists():
     if request.method == 'POST':
-        def getUserPlaylists(offset):
-            print("Get User Playlists, Offset=", offset)
-            try:
-                token_info = get_token()
-            except:
-                print("User not logged in")
+        search = request.form['search']
+        try:
+            token_info = get_token()
+        except:
+            print("User not logged in")
+            if search == '':
                 data = {}
                 return jsonify(data)
-            
+            else:
+                result = api.getPlaylists(search)
+                return jsonify(result)
+        def getUserPlaylists(offset):
+            print("Get User Playlists, Offset=", offset)
             sp = spotipy.Spotify(auth=token_info['access_token'])
             playlist_data = sp.current_user_playlists(50, offset)
             playlists = []
@@ -114,12 +118,14 @@ def getPlaylists():
     data['playlists'] = playlists
     
     # implement search functionality
-    search = request.form['search']
     if search != '':
         filtered_playlists = []
         for playlist in playlists:
             if search.lower() in playlist['name'].lower():
                 filtered_playlists.append(playlist)
+        result = json.loads(api.getPlaylists(search))
+        for playlist in result['playlists']:
+            filtered_playlists.append(playlist)
         data['playlists'] = filtered_playlists
     else:
         data['playlists'] = playlists
@@ -145,15 +151,14 @@ def getAlbumSongs():
 def getPlaylistSongs():
     if request.method == 'POST':
         search = request.form['search']
+        try:
+            token_info = get_token()
+        except:
+            print("User not logged in")
+            data = {}
+            return jsonify(data)
         def getPlaylistSongs(playlistID, offset):
             print("Get Playlist Songs", playlistID, "Offset=", offset)
-            try:
-                token_info = get_token()
-            except:
-                print("User not logged in")
-                data = {}
-                return jsonify(data)
-            
             sp = spotipy.Spotify(auth=token_info['access_token'])
             playlist_data = sp.playlist_items(playlistID, None, 100, offset)
             

@@ -132,6 +132,36 @@ def getAlbums(search):
     return formatted_json
 
 
+def getPlaylists(search):
+    print("Get Playlists", search)
+    searchLimit = '10'
+    searchType = 'playlist'
+    url = 'https://api.spotify.com/v1/search?q=' + search + '&type=' + searchType + '&limit=' + searchLimit
+    headers = {
+        'Authorization': 'Bearer ' + access_token
+    }
+    playlist_response = requests.get(url, headers=headers)
+    playlist_data = playlist_response.json()
+
+    playlists = []
+    data = {}
+    for playlist in playlist_data['playlists']['items']:
+        images = playlist['images']
+        if (len(images) > 0) and len(playlists) < 10:
+            curr_playlist = {}
+            curr_playlist['name'] = playlist['name']
+            curr_playlist['id'] = playlist['id']
+            curr_playlist['img'] = playlist['images'][0]['url']
+            curr_playlist['owner'] = playlist['owner']['display_name']
+            playlists.append(curr_playlist)
+
+    data['playlists'] = playlists
+
+    json_data = data
+    formatted_json = json.dumps(json_data, indent=4)
+    return formatted_json
+
+
 
 def getAlbumSongs(albumID):
     print("Get Album Songs", albumID)

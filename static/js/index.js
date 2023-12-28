@@ -42,8 +42,6 @@ if (sessionStorage.getItem('loggedIn') != 'true') {
         sessionStorage.setItem('accountName', data['display_name']);
         sessionStorage.setItem('accountImage', data['images'][1]['url']);
         sessionStorage.setItem('accountID', data['id']);
-        let popup = document.querySelector('.playlist-popup');
-        if (popup) popup.remove();
     });
 } else {
     console.log("logged in");
@@ -51,8 +49,6 @@ if (sessionStorage.getItem('loggedIn') != 'true') {
     let accountEl = document.querySelector('.account');
     accountEl.querySelector('.account-text').innerHTML = sessionStorage.getItem('accountName');
     accountEl.querySelector('.account-icon').src = sessionStorage.getItem('accountImage');
-    let popup = document.querySelector('.playlist-popup');
-    if (popup) popup.remove();
 }
 
 
@@ -74,17 +70,15 @@ let searchTerm, searchType = "";
 function search() {
     let searchValue = document.getElementById("search").value;
     let type = document.querySelector('.active').innerHTML;
-    if (!(type == "Playlist" && !loggedIn)) {
-        if (((type != "Playlist" && searchValue != "") || type == "Playlist") && (searchValue != lastSearch || currTerm != lastTerm)) {
-            insertLoading();
-            removeNoResults();
-            lastSearch = searchValue;
-            lastTerm = currTerm;
-            searchTerm = searchValue;
-            searchType = currTerm;
-            fillResults();
-            buildResultEventListeners();
-        }
+    if (((type != "Playlist" && searchValue != "") || type == "Playlist") && (searchValue != lastSearch || currTerm != lastTerm)) {
+        insertLoading();
+        removeNoResults();
+        lastSearch = searchValue;
+        lastTerm = currTerm;
+        searchTerm = searchValue;
+        searchType = currTerm;
+        fillResults();
+        buildResultEventListeners();
     }
 }
 
@@ -94,17 +88,6 @@ searchOptions.forEach(function (option) {
     option = option.querySelector('.search-type-inner');
     option.addEventListener('click', function (e) {
         let name = option.innerHTML;
-        if (name == "Playlist" && !loggedIn) {
-            let htmlData = `
-            <div class="playlist-popup">
-                <h5>You must be logged in to search for your playlists.</h5>
-            </div>
-            `;
-            document.querySelector('.home-results').insertAdjacentHTML('beforeend', htmlData);
-        } else {
-            let popup = document.querySelector('.playlist-popup');
-            if (popup) popup.remove();
-        }
         document.getElementById("search").placeholder = `Search for ${name.toLowerCase()}`;
         searchOptions.forEach(function (option) {
             option = option.querySelector('.search-type-inner');
@@ -260,17 +243,4 @@ function removeNoResults() {
     if (noResults) {
         noResults.remove();
     }
-}
-
-// popup remove
-let popup = document.querySelector('.playlist-popup');
-if (popup) popup.remove();
-let option = document.querySelector('.active').innerHTML;
-if (option == "Playlist" && !loggedIn) {
-    let htmlData = `
-    <div class="playlist-popup">
-        <h5>You must be logged in to search for your playlists.</h5>
-    </div>
-    `;
-    document.querySelector('.home-results').insertAdjacentHTML('beforeend', htmlData);
 }
