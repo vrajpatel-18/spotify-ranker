@@ -1,6 +1,8 @@
 import requests
 import json
 import time
+import hashlib
+import base64
 import os
 from dotenv import load_dotenv
 
@@ -49,6 +51,13 @@ def getSongPopularity(songID):
     song_response = requests.get(url, headers=headers)
     song_data = song_response.json()
     return song_data['popularity']
+
+def generate_id(input_string):
+    hash_object = hashlib.sha256(input_string.encode())
+    hash_digest = hash_object.digest()
+    base64_encoded = base64.b64encode(hash_digest)
+    id_str = base64_encoded.decode("utf-8").replace("/", "").replace("+", "")
+    return id_str[:22]
 
 
 
@@ -184,6 +193,7 @@ def getPlaylistSongs(playlistID, offset):
         curr_song['artists'] = artists
         if song['is_local']:
             curr_song['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
+            curr_song['id'] = generate_id(song['track']['name'] + song['track']['album']['name'])
         else:
             curr_song['img'] = song['track']['album']['images'][0]['url']
         songs.append(curr_song)

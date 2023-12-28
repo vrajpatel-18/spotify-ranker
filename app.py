@@ -145,8 +145,64 @@ def getAlbumSongs():
 def getPlaylistSongs():
     if request.method == 'POST':
         search = request.form['search']
-        result = api.getAllPlaylistSongs(search)
-        return jsonify(result)
+        def getPlaylistSongs(playlistID, offset):
+            print("Get Playlist Songs", playlistID, "Offset=", offset)
+            try:
+                token_info = get_token()
+            except:
+                print("User not logged in")
+                data = {}
+                return jsonify(data)
+            
+            sp = spotipy.Spotify(auth=token_info['access_token'])
+            playlist_data = sp.playlist_items(playlistID, None, 100, offset)
+            
+            songs = []
+            data = {}
+            if 'items' not in playlist_data:
+                data['songs'] = songs
+                json_data = data
+                formatted_json = json.dumps(json_data, indent=4)
+                return formatted_json
+            for song in playlist_data['items']:
+                curr_song = {}
+                curr_song['name'] = song['track']['name']
+                curr_song['id'] = song['track']['id']
+                curr_song['date'] = song['track']['album']['release_date']
+                curr_song['album'] = song['track']['album']['name']
+                artists = []
+                for artist in song['track']['artists']:
+                    artists.append(artist['name'])
+                curr_song['artists'] = artists
+                if song['is_local']:
+                    curr_song['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
+                    curr_song['id'] = api.generate_id(song['track']['name'] + song['track']['album']['name'])
+                else:
+                    curr_song['img'] = song['track']['album']['images'][0]['url']
+                songs.append(curr_song)
+            
+            data['songs'] = songs
+            
+            json_data = data
+            formatted_json = json.dumps(json_data, indent=4)
+            return formatted_json
+        print("Get All Playlist Songs", search)
+        offset = 0
+        songs = []
+        while True:
+            playlist_data = json.loads(getPlaylistSongs(search, offset))
+            if len(playlist_data['songs']) == 0:
+                break
+            for song in playlist_data['songs']:
+                songs.append(song)
+            offset += 100
+        
+        data = {}
+        data['songs'] = songs
+        
+        json_data = data
+        formatted_json = json.dumps(json_data, indent=4)
+        return formatted_json
     
     
 @app.route('/user-info', methods=['GET'])
