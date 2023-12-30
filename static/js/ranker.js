@@ -6,7 +6,6 @@ if (sessionStorage.getItem('loggedIn') != 'true') {
             url: `/user-info`,
             success: function (data) {
                 if (JSON.stringify(data) !== '{}') {
-                    console.log(data);
                     callback(data);
                 } else {
                     console.log("data not found");
@@ -177,7 +176,19 @@ function updateSearch() {
     let newSongs = [];
     originalSongs.forEach(function (song) {
         let songInfo = song.classList.value.replace('list-song ', '') + " " + song.querySelector('.list-song-title').innerHTML + " " + song.querySelector('.list-song-artist').innerHTML;
-        songInfo.replace(',', '').replace('.', '').replace('(', '').replace(')', '');
+        if (searchType == 'artist') songInfo = songInfo.replace(document.querySelector('.list-title').innerHTML, '');
+        else if (searchType == 'album') {
+            let artist = song.querySelector('.list-song-artist');
+            if (artist) {
+                artist = artist.innerHTML;
+                let index = artist.indexOf(',');
+                if (index != -1) artist = artist.substring(0, index);
+                console.log(typeof artist);
+                songInfo = songInfo.replace(artist, '');
+            }
+        }
+        songInfo = songInfo.replace(',', '').replace('.', '').replace('(', '').replace(')', '').replace("'", '');
+        console.log(songInfo);
         if (songInfo.toLowerCase().includes(search.toLowerCase())) {
             newSongs.push(song);
         }
@@ -192,16 +203,13 @@ function removeSongFromOriginal(songEl) {
     let newSongs = [];
     if (originalSongs) {
         originalSongs.forEach(function (song) {
-            console.log(typeof song, song);
             if (songEl.id != song.id) {
                 newSongs.push(song);
             }
         });
         originalSongs = newSongs;
-        console.log(originalSongs);
         sessionStorage.setItem('originalSongs', JSON.stringify(originalSongs.map(element => element.outerHTML)));
     }
-    console.log(originalSongs);
 }
 
 function addSongToOriginal(songEl) {
@@ -302,7 +310,6 @@ function buildSongs() {
             console.log('done');
             document.querySelector('.search-bar').classList.remove('hidden');
             originalSongs = Array.from(document.querySelector('.songs-container').querySelectorAll('.list-song'));
-            console.log(originalSongs);
             sessionStorage.setItem('originalSongs', JSON.stringify(originalSongs));
             updateData();
         }
@@ -345,7 +352,6 @@ if (sessionStorage.getItem("changed") == 'true') {
     }
     document.querySelector('.search-bar').classList.remove('hidden');
     originalSongs = JSON.parse(sessionStorage.getItem("originalSongs")).map(htmlString => new DOMParser().parseFromString(htmlString, 'text/html').body.firstChild);
-    console.log(originalSongs);
     assignDoubleClick();
 }
 
@@ -386,12 +392,3 @@ function removeNoResults() {
         noResults.remove();
     }
 }
-
-
-
-document.querySelector('.list-options-save').addEventListener('click', function () {
-    let count = 0;
-    originalSongs.forEach(function (song) {
-        console.log(song.id)
-    });
-});

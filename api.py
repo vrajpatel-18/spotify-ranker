@@ -5,6 +5,7 @@ import hashlib
 import base64
 import os
 from dotenv import load_dotenv
+from datetime import datetime
 
 
 load_dotenv()
@@ -52,12 +53,17 @@ def getSongPopularity(songID):
     song_data = song_response.json()
     return song_data['popularity']
 
-def generate_id(input_string):
+def generateID(input_string):
     hash_object = hashlib.sha256(input_string.encode())
     hash_digest = hash_object.digest()
     base64_encoded = base64.b64encode(hash_digest)
     id_str = base64_encoded.decode("utf-8").replace("/", "").replace("+", "")
     return id_str[:22]
+
+def durationGapDays(date1, date2):
+    d1 = datetime.strptime(date1, "%Y-%m-%d")
+    d2 = datetime.strptime(date2, "%Y-%m-%d")
+    return (d2 - d1).days
 
 
 
@@ -123,7 +129,12 @@ def getAlbums(search):
             curr_album['artists'] = artists
             curr_album['img'] = album['images'][0]['url']
             curr_album['year'] = album['release_date'][0:4]
-            albums.append(curr_album)
+            append = True
+            for existing_album in albums:
+                if existing_album['name'] == curr_album['name'] and existing_album['artists'][0] == curr_album['artists'][0]:
+                    append = False
+            if append:
+                albums.append(curr_album)
     
     data['albums'] = albums
         
@@ -223,7 +234,7 @@ def getPlaylistSongs(playlistID, offset):
         curr_song['artists'] = artists
         if song['is_local']:
             curr_song['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
-            curr_song['id'] = generate_id(song['track']['name'] + song['track']['album']['name'])
+            curr_song['id'] = generateID(song['track']['name'] + song['track']['album']['name'])
         else:
             curr_song['img'] = song['track']['album']['images'][0]['url']
         songs.append(curr_song)
@@ -279,6 +290,8 @@ def getArtistAlbums(artistID):
         curr_album['year'] = album['release_date'][0:4]
         albums.append(curr_album)
     
+    if albums:
+        albums.reverse()
     data['albums'] = albums
         
     json_data = data
@@ -310,11 +323,14 @@ def getArtistSingles(artistID):
             curr_single['year'] = single['release_date'][0:4]
             singles.append(curr_single)
     
+    if singles:
+        singles.reverse()
     data['albums'] = singles
         
     json_data = data
     formatted_json = json.dumps(json_data, indent=4)
     return formatted_json
+
 
 
 def getArtistSongs(artistID):
@@ -327,7 +343,12 @@ def getArtistSongs(artistID):
     for album in albums_data['albums']:
         album_data = json.loads(getAlbumSongs(album['id']))
         for song in album_data['songs']:
-            songs.append(song)
+            append = True
+            for existing_song in songs:
+                if existing_song['name'] == song['name'] and existing_song['artists'] == song['artists'] and durationGapDays(existing_song['date'], song['date']) < 365:
+                    append = False
+            if append:
+                songs.append(song)
     for single in singles_data['albums']:
         single_data = json.loads(getAlbumSongs(single['id']))
         for song in single_data['songs']:

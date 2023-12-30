@@ -181,7 +181,7 @@ def getPlaylistSongs():
                 curr_song['artists'] = artists
                 if song['is_local']:
                     curr_song['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
-                    curr_song['id'] = api.generate_id(song['track']['name'] + song['track']['album']['name'])
+                    curr_song['id'] = api.generateID(song['track']['name'] + song['track']['album']['name'])
                 else:
                     curr_song['img'] = song['track']['album']['images'][0]['url']
                 songs.append(curr_song)
