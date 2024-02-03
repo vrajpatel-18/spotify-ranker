@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, url_for, session, redirect
-import api
+import api, db
 import time
 import json
 import spotipy
@@ -222,6 +222,7 @@ def getUserInfo():
         
         sp = spotipy.Spotify(auth=token_info['access_token'])
         user_info = sp.current_user()
+        db.create_user(user_info)
         return jsonify(user_info)
     
 

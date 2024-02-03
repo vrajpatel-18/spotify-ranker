@@ -6,7 +6,6 @@ if (sessionStorage.getItem('type') != null) {
     document.getElementById("search").placeholder = `Search for ${currTerm}`;
     let searchOptions = document.querySelectorAll('.search-type');
     searchOptions.forEach(function (option) {
-        option = option.querySelector('.search-type-inner');
         option.classList.remove('active');
         if (option.innerHTML.toLowerCase() == currTerm) {
             option.classList.add('active');
@@ -85,12 +84,10 @@ function search() {
 
 let searchOptions = document.querySelectorAll('.search-type');
 searchOptions.forEach(function (option) {
-    option = option.querySelector('.search-type-inner');
     option.addEventListener('click', function (e) {
         let name = option.innerHTML;
         document.getElementById("search").placeholder = `Search for ${name.toLowerCase()}`;
         searchOptions.forEach(function (option) {
-            option = option.querySelector('.search-type-inner');
             option.classList.remove('active');
         });
         option.classList.add('active');
@@ -205,6 +202,7 @@ function buildResultEventListeners() {
             sessionStorage.setItem('leftHTML', 'null');
             sessionStorage.setItem('rightHTML', 'null');
             sessionStorage.setItem('originalSongs', '');
+            sessionStorage.setItem('totalSongs', 0);
         });
     });
 }

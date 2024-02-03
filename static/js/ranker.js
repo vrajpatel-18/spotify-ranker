@@ -311,6 +311,7 @@ function buildSongs() {
             document.querySelector('.search-bar').classList.remove('hidden');
             originalSongs = Array.from(document.querySelector('.songs-container').querySelectorAll('.list-song'));
             sessionStorage.setItem('originalSongs', JSON.stringify(originalSongs));
+            sessionStorage.setItem('totalSongs', originalSongs.length);
             updateData();
         }
     });
@@ -390,5 +391,25 @@ function removeNoResults() {
     let noResults = document.querySelector('.no-results');
     if (noResults) {
         noResults.remove();
+    }
+}
+
+
+document.addEventListener("click", function (event) {
+    if (!document.querySelector('.list-options-container').contains(event.target)) {
+        document.querySelector('.list-options-popup').classList.add('hidden');
+    }
+})
+
+document.querySelector('.list-options-save').addEventListener('click', saveList);
+function saveList() {
+    if (sessionStorage.getItem('loggedIn') != 'true') {
+        document.querySelector('.list-options-popup').classList.remove('hidden');
+        document.querySelector('.popup-inner').innerHTML = "You must be logged in to save/load a list!";
+    } else if (sessionStorage.getItem('totalSongs') != document.querySelector('.list-song-container').querySelectorAll('.list-song').length + document.querySelector('.songs-container').querySelectorAll('.list-song').length) {
+        document.querySelector('.list-options-popup').classList.remove('hidden');
+        document.querySelector('.popup-inner').innerHTML = "Error saving list. Try removing the search!";
+    } else {
+        // save list
     }
 }
