@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Ranking</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link href="https://www.dafontfree.net/embed/c3VsdGFuLWJvbGQtc3VsdGFuLWJvbGQmZGF0YS80MS9zLzk3MDE2L1N1bHRhbiBib2xkLnR0Zg" rel="stylesheet" type="text/css"/>
+</head>
+<body class="noselect">
+
+  <nav class="navbar navbar-expand-md navbar-dark fixed-top ranker-navbar">
+    <div class="container-fluid">
+        <a href="{{ url_for('index') }}"><h3 class="navbar-title">Spotify Ranker</h3></a>
+    </div>
+      <div class="account">
+        <div class="account-text signed-out">Sign In</div>
+        <img src="{{ url_for('static', filename='images/user.png') }}" class="account-icon">
+      </div>
+  </nav>
+
+<div class="ranker-body" id="{{ type }}">
+    <div class="left-container">
+        <input type="text" class="search-bar hidden" placeholder="Search for a track">
+        <div class="songs-container shared">
+
+        </div>
+        <div class="options-container">
+            <div class="options-add">
+                <h3>ADD ALL SONGS</h3>
+            </div>
+            <div class="options-remove">
+                <h3>REMOVE ALL SONGS</h3>
+            </div>
+        </div>
+    </div>
+    <div class="right-container">
+        <div class="right-container-inner">
+            <h1 class="list-title" id="{{ id }}">
+                {{ title }}
+            </h1>
+            <div class="list-container">
+                <div class="list-number-container">
+                    
+                </div>
+                <div class="list-song-container shared">
+
+                </div>
+                    <div class="list-song add">
+                        <div class="list-song-img-container"><img src="{{ url_for('static', filename='images/plus-add.png') }}" class="list-song-img"></div>
+                        <div class="list-song-info">
+                            <h5 class="list-song-title">Drag or double-click songs from the left to add them to the list.</h5>
+                        </div>
+                    </div>
+            </div>
+            <div class="list-options">
+                <div class="list-options-container">
+                    <div class="list-options-save">
+                        <h3>SAVE LIST</h3>
+                    </div>
+                </div>
+                <div class="list-options-container">
+                    <div class="list-options-load">
+                        <h3>LOAD LIST</h3>
+                    </div>
+                </div>
+                <div class="list-options-popup hidden">
+                    <h5 class="popup-inner"></h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
+    <script type="module" src="{{ url_for('static', filename='js/test.js') }}"></script>
+</body>
+</html>

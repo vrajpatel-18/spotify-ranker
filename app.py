@@ -19,6 +19,67 @@ app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
 app.secret_key = os.environ.get("APP_SECRET_KEY")
 TOKEN_INFO = 'token_info'
 
+
+@app.route('/page/<page_name>')
+def dynamic_page(page_name):
+    # Example of setting different content based on the page_name
+    content_map = {
+        'about': {'page_title': 'About Us', 'heading': 'Welcome to About Us Page', 'content': 'Here is some info about us.'},
+        'contact': {'page_title': 'Contact', 'heading': 'Contact Us', 'content': 'Contact us here.'},
+        # Add more mappings as needed
+    }
+
+    # Default content if page_name not found in content_map
+    default_content = {'page_title': 'Page Not Found', 'heading': '404', 'content': 'This page does not exist.'}
+
+    # Select the appropriate content based on page_name
+    content = content_map.get(page_name, default_content)
+
+    # Render the same template with different content based on the URL
+    return render_template('test.html', **content)
+
+@app.route('/album/<albumId>')
+def album(albumId):
+    albumName = api.getAlbumName(albumId)
+    content_map = {
+        albumId: {'id': albumId, 'title': albumName, 'type': 'album'},
+    }
+    default_content = {'id': albumId, 'title': 'ERROR'}
+    content = None
+    if albumId == '':
+        content = default_content
+    else:
+        content = content_map.get(albumId, default_content)
+    return render_template('test.html', **content)
+
+@app.route('/artist/<artistId>')
+def artist(artistId):
+    artistName = api.getArtistName(artistId)
+    content_map = {
+        artistId: {'id': artistId, 'title': artistName, 'type': 'artist'},
+    }
+    default_content = {'id': artistId, 'title': 'ERROR'}
+    content = None
+    if artistId == '':
+        content = default_content
+    else:
+        content = content_map.get(artistId, default_content)
+    return render_template('test.html', **content)
+
+@app.route('/playlist/<playlistId>')
+def playlist(playlistId):
+    playlistName = api.getPlaylistName(playlistId)
+    content_map = {
+        playlistId: {'id': playlistId, 'title': playlistName, 'type': 'playlist'},
+    }
+    default_content = {'id': playlistId, 'title': 'ERROR'}
+    content = None
+    if playlistId == '':
+        content = default_content
+    else:
+        content = content_map.get(playlistId, default_content)
+    return render_template('test.html', **content)
+
 @app.route('/')
 def index():
     return render_template('index.html', **locals())

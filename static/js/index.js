@@ -55,7 +55,7 @@ if (sessionStorage.getItem('loggedIn') != 'true') {
 
 
 document.getElementById("searchButton").addEventListener('click', search);
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
     if (event.keyCode === 13) {
         search();
     }
@@ -77,7 +77,6 @@ function search() {
         searchTerm = searchValue;
         searchType = currTerm;
         fillResults();
-        buildResultEventListeners();
     }
 }
 
@@ -128,7 +127,7 @@ function fillResults() {
             let resultContainer = document.querySelector('.home-results');
             data['artists'].forEach(function (artist) {
                 let htmlData = `
-                <a href="/ranker"><div id="${artist['id']}" class="home-results-item">
+                <a href="/artist/${artist['id']}"><div id="${artist['id']}" class="home-results-item">
                     <img class="home-results-item-img" src="${artist['img']}">
                     <div class="home-results-item-text">
                         <h2 class="home-results-item-text-title">${artist['name']}</h2>
@@ -140,14 +139,13 @@ function fillResults() {
                 </div></a>
                 `;
                 resultContainer.insertAdjacentHTML('beforeend', htmlData);
-                buildResultEventListeners()
             });
         } else if ('albums' in data) {
             let resultContainer = document.querySelector('.home-results');
             data['albums'].forEach(function (album) {
                 let artists = album['artists'].join(', ');
                 let htmlData = `
-                <a href="/ranker"><div id="${album['id']}" class="home-results-item">
+                <a href="/album/${album['id']}"><div id="${album['id']}" class="home-results-item">
                     <img class="home-results-item-img" src="${album['img']}">
                     <div class="home-results-item-text">
                         <h2 class="home-results-item-text-title">${album['name']}</h2>
@@ -159,7 +157,6 @@ function fillResults() {
                 </div></a>
                 `;
                 resultContainer.insertAdjacentHTML('beforeend', htmlData);
-                buildResultEventListeners()
             });
         } else if ('playlists' in data) {
             if (data['playlists'].length == 0) {
@@ -169,7 +166,7 @@ function fillResults() {
                 let resultContainer = document.querySelector('.home-results');
                 data['playlists'].forEach(function (playlist) {
                     let htmlData = `
-                <a href="/ranker"><div id="${playlist['id']}" class="home-results-item">
+                <a href="/playlist/${playlist['id']}"><div id="${playlist['id']}" class="home-results-item">
                     <img class="home-results-item-img" src="${playlist['img']}">
                     <div class="home-results-item-text">
                         <h2 class="home-results-item-text-title">${playlist['name']}</h2>
@@ -181,29 +178,12 @@ function fillResults() {
                 </div></a>
                 `;
                     resultContainer.insertAdjacentHTML('beforeend', htmlData);
-                    buildResultEventListeners()
                 });
             }
         } else {
             removeLoading();
             insertNoResults();
         }
-    });
-}
-
-
-function buildResultEventListeners() {
-    let results = document.querySelectorAll('.home-results-item');
-    results.forEach(function (result) {
-        result.addEventListener('mouseover', function (e) {
-            sessionStorage.setItem('id', result.id);
-            sessionStorage.setItem('name', result.querySelector('.home-results-item-text-title').innerHTML);
-            sessionStorage.setItem('changed', 'true');
-            sessionStorage.setItem('leftHTML', 'null');
-            sessionStorage.setItem('rightHTML', 'null');
-            sessionStorage.setItem('originalSongs', '');
-            sessionStorage.setItem('totalSongs', 0);
-        });
     });
 }
 

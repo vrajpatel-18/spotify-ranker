@@ -375,3 +375,40 @@ def getArtistSongs(artistID):
     
     
 
+
+def getAlbumName(albumId):
+    url = 'https://api.spotify.com/v1/albums/' + albumId
+    headers = {
+        'Authorization': 'Bearer ' + access_token
+    }
+    album_response = requests.get(url, headers=headers)
+    album_data = album_response.json()
+    if len(album_data) == 1:
+        return ''
+    else:
+        return album_data['name']
+    
+    
+def getArtistName(artistId):
+    url = 'https://api.spotify.com/v1/artists/' + artistId
+    headers = {
+        'Authorization': 'Bearer ' + access_token
+    }
+    artist_response = requests.get(url, headers=headers)
+    artist_data = artist_response.json()
+    if len(artist_data) == 1:
+        return ''
+    else:
+        return artist_data['name']
+    
+def getPlaylistName(artistId):
+    url = 'https://api.spotify.com/v1/playlists/' + artistId
+    headers = {
+        'Authorization': 'Bearer ' + access_token
+    }
+    playlist_response = requests.get(url, headers=headers)
+    playlist_data = playlist_response.json()
+    if len(playlist_data) == 1:
+        return ''
+    else:
+        return playlist_data['name']
