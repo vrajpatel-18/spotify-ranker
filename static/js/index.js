@@ -1,19 +1,6 @@
 // ON LOAD
-let currTerm;
+let currTerm = "album";
 let loggedIn = false;
-if (sessionStorage.getItem('type') != null) {
-    currTerm = sessionStorage.getItem('type').toLowerCase();
-    document.getElementById("search").placeholder = `Search for ${currTerm}`;
-    let searchOptions = document.querySelectorAll('.search-type');
-    searchOptions.forEach(function (option) {
-        option.classList.remove('active');
-        if (option.innerHTML.toLowerCase() == currTerm) {
-            option.classList.add('active');
-        }
-    });
-} else {
-    currTerm = "album";
-}
 
 // Check if user is logged in
 if (sessionStorage.getItem('loggedIn') != 'true') {
@@ -63,7 +50,6 @@ document.addEventListener('keydown', function (event) {
 
 let lastSearch = "";
 let lastTerm = "";
-sessionStorage.setItem('type', currTerm);
 let searchTerm, searchType = "";
 
 function search() {
@@ -92,7 +78,6 @@ searchOptions.forEach(function (option) {
         option.classList.add('active');
         if (name.toLowerCase() != currTerm) { // user changed options
             currTerm = name.toLowerCase();
-            sessionStorage.setItem('type', currTerm);
             clearResults();
             search();
         }

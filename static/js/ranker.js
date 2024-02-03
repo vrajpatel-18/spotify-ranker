@@ -44,7 +44,7 @@ let songList = new Sortable(cards, {
         assignDoubleClick();
     },
     onEnd: function (evt) {
-        updateData();
+
     },
 });
 
@@ -59,10 +59,10 @@ let rankList = new Sortable(list, {
     onAdd: function (evt) { // when song moves from left to right
         addNumber();
         removeSongFromOriginal(evt.item);
-        updateData();
+
     },
     onEnd: function (evt) {
-        updateData();
+
     },
 });
 
@@ -71,12 +71,12 @@ function addNumber() {
     let numbers = document.querySelectorAll('.list-number-text');
     if (numbers.length != 0) {
         let lastNumber;
-        numbers.forEach(function(number) {
+        numbers.forEach(function (number) {
             lastNumber = Number(number.innerHTML);
         });
         let htmlData = `
             <div class="list-number">
-                <h3 class="list-number-text">${lastNumber+1}</h3>
+                <h3 class="list-number-text">${lastNumber + 1}</h3>
             </div>
         `;
         document.querySelector('.list-number-container').insertAdjacentHTML('beforeend', htmlData);
@@ -87,7 +87,7 @@ function addNumber() {
             </div>
         `;
         document.querySelector('.list-number-container').insertAdjacentHTML('beforeend', htmlData);
-    
+
     }
 }
 
@@ -134,7 +134,6 @@ function addAllSongs() {
     for (let i = 1; i <= length; i++) {
         addNumber();
     }
-    updateData();
 }
 
 function removeAllSongs() {
@@ -162,7 +161,6 @@ function removeAllSongs() {
         addSongToOriginal(song);
     });
     assignDoubleClick();
-    updateData();
 }
 
 document.querySelector(".search-bar").addEventListener("input", function () {
@@ -208,7 +206,6 @@ function removeSongFromOriginal(songEl) {
             }
         });
         originalSongs = newSongs;
-        sessionStorage.setItem('originalSongs', JSON.stringify(originalSongs.map(element => element.outerHTML)));
     }
 }
 
@@ -247,20 +244,7 @@ function assignDoubleClick() {
     }
 }
 
-
-function updateData() {
-    console.log("update data");
-    sessionStorage.setItem('leftHTML', document.querySelector('.songs-container').innerHTML);
-    sessionStorage.setItem('rightNumsHTML', document.querySelector('.list-number-container').innerHTML);
-    sessionStorage.setItem('rightSongsHTML', document.querySelector('.list-song-container').innerHTML);
-    if (originalSongs) {
-        sessionStorage.setItem('originalSongs', JSON.stringify(originalSongs.map(element => element.outerHTML)));
-    }
-}
-
-
 function getData(search, type, callback) {
-    updateData();
     console.log('loading...');
     insertLoading();
     $.ajax({
@@ -283,7 +267,6 @@ function buildSongs() {
         if (data['songs'].length == 0) {
             console.log('no songs');
             insertNoResults();
-            updateData();
         } else {
             if (searchType == 'album') {
                 data['songs'].forEach(function (song) {
@@ -310,9 +293,6 @@ function buildSongs() {
             console.log('done');
             document.querySelector('.search-bar').classList.remove('hidden');
             originalSongs = Array.from(document.querySelector('.songs-container').querySelectorAll('.list-song'));
-            sessionStorage.setItem('originalSongs', JSON.stringify(originalSongs));
-            sessionStorage.setItem('totalSongs', originalSongs.length);
-            updateData();
         }
     });
 }
@@ -329,32 +309,18 @@ function buildSongs() {
 
 
 // ON READY
-let searchID = sessionStorage.getItem('id');
-let searchType = sessionStorage.getItem('type');
-let name = sessionStorage.getItem('name');
+let searchID = document.querySelector('.list-title').id;
+console.log(searchID);
+let searchType = document.querySelector('.ranker-body').id;
+let name = document.querySelector('.list-title').innerHTML.trim();
 if (name.length > 14) {
     let fontSize = 72;
-    for (let i = 14; i <  name.length; i++) {
+    for (let i = 14; i < name.length; i++) {
         fontSize -= 1.1;
     }
     document.querySelector('.list-title').style.fontSize = `${fontSize}px`;
 }
-document.querySelector('.list-title').innerHTML = sessionStorage.getItem('name');
-if (sessionStorage.getItem("changed") == 'true') {
-    sessionStorage.setItem("changed", 'false');
-    buildSongs();
-} else {
-    if (sessionStorage.getItem('leftHTML') != 'null') {
-        document.querySelector('.songs-container').innerHTML = sessionStorage.getItem('leftHTML');
-        document.querySelector('.list-number-container').innerHTML = sessionStorage.getItem('rightNumsHTML');
-        document.querySelector('.list-song-container').innerHTML = sessionStorage.getItem('rightSongsHTML');
-    } else {
-        removeAllSongs();
-    }
-    document.querySelector('.search-bar').classList.remove('hidden');
-    originalSongs = JSON.parse(sessionStorage.getItem("originalSongs")).map(htmlString => new DOMParser().parseFromString(htmlString, 'text/html').body.firstChild);
-    assignDoubleClick();
-}
+buildSongs();
 
 
 
@@ -401,15 +367,15 @@ document.addEventListener("click", function (event) {
     }
 })
 
-document.querySelector('.list-options-save').addEventListener('click', saveList);
-function saveList() {
-    if (sessionStorage.getItem('loggedIn') != 'true') {
-        document.querySelector('.list-options-popup').classList.remove('hidden');
-        document.querySelector('.popup-inner').innerHTML = "You must be logged in to save/load a list!";
-    } else if (sessionStorage.getItem('totalSongs') != document.querySelector('.list-song-container').querySelectorAll('.list-song').length + document.querySelector('.songs-container').querySelectorAll('.list-song').length) {
-        document.querySelector('.list-options-popup').classList.remove('hidden');
-        document.querySelector('.popup-inner').innerHTML = "Error saving list. Try removing the search!";
-    } else {
-        // save list
-    }
-}
+// document.querySelector('.list-options-save').addEventListener('click', saveList);
+// function saveList() {
+//     if (sessionStorage.getItem('loggedIn') != 'true') {
+//         document.querySelector('.list-options-popup').classList.remove('hidden');
+//         document.querySelector('.popup-inner').innerHTML = "You must be logged in to save/load a list!";
+//     } else if (sessionStorage.getItem('totalSongs') != document.querySelector('.list-song-container').querySelectorAll('.list-song').length + document.querySelector('.songs-container').querySelectorAll('.list-song').length) {
+//         document.querySelector('.list-options-popup').classList.remove('hidden');
+//         document.querySelector('.popup-inner').innerHTML = "Error saving list. Try removing the search!";
+//     } else {
+//         // save list
+//     }
+// }

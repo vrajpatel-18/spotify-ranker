@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotify Ranker</title>
+    <title>{{ title }} - Ranking</title>
     <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
@@ -21,7 +21,7 @@
       </div>
   </nav>
 
-<div class="ranker-body">
+<div class="ranker-body" id="{{ type }}">
     <div class="left-container">
         <input type="text" class="search-bar hidden" placeholder="Search for a track">
         <div class="songs-container shared">
@@ -38,8 +38,8 @@
     </div>
     <div class="right-container">
         <div class="right-container-inner">
-            <h1 class="list-title">
-
+            <h1 class="list-title" id="{{ id }}">
+                {{ title }}
             </h1>
             <div class="list-container">
                 <div class="list-number-container">
