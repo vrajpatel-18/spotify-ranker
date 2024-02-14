@@ -4,7 +4,6 @@ import time
 import json
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from flask import Flask, request, url_for, session, redirect
 import os
 from dotenv import load_dotenv
 
@@ -68,19 +67,23 @@ def playlist(playlistId):
 
 @app.route('/login')
 def login():
+    next_url = request.args.get('next') or url_for('index')
+    session['next_url'] = next_url
     auth_url = create_spotify_oauth().get_authorize_url()
     return redirect(auth_url)
 
+
 @app.route('/redirect')
 def redirect_page():
+    next_url = session.get('next_url')
+    print("Redirecting to:", next_url)
     session.clear()
     code = request.args.get('code')
     token_info = create_spotify_oauth().get_access_token(code)
     session[TOKEN_INFO] = token_info
-    # update token in token.json
     with open('token.json', 'w') as file:
         json.dump(token_info, file, indent=4)
-    return redirect(url_for('index',_external=True))
+    return redirect(next_url)
 
 
 @app.route('/artist', methods=['POST'])
@@ -96,13 +99,7 @@ def getAlbums():
         search = request.form['search']
         result = api.getAlbums(search)
         return jsonify(result)
-    
-# @app.route('/playlist', methods=['POST'])
-# def getPlaylists():
-#     if request.method == 'POST':
-#         search = request.form['search']
-#         result = api.getPlaylists()
-#         return jsonify(result)
+
 @app.route('/playlist', methods=['POST'])
 def getPlaylists():
     if request.method == 'POST':
@@ -209,6 +206,8 @@ def getPlaylistSongs():
                 formatted_json = json.dumps(json_data, indent=4)
                 return formatted_json
             for song in playlist_data['items']:
+                if song['track'] == None:
+                    continue
                 curr_song = {}
                 curr_song['name'] = song['track']['name']
                 curr_song['id'] = song['track']['id']
@@ -221,8 +220,10 @@ def getPlaylistSongs():
                 if song['is_local']:
                     curr_song['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
                     curr_song['id'] = api.generateID(song['track']['name'] + song['track']['album']['name'])
+                    curr_song['type'] = 'local'
                 else:
                     curr_song['img'] = song['track']['album']['images'][0]['url']
+                    curr_song['type'] = 'spotify'
                 songs.append(curr_song)
             
             data['songs'] = songs
@@ -259,12 +260,34 @@ def getUserInfo():
             data = {}
             return jsonify(data)
         
+        session['logged_in'] = True
         sp = spotipy.Spotify(auth=token_info['access_token'])
         user_info = sp.current_user()
         db.create_user(user_info)
         return jsonify(user_info)
     
+    
+@app.route('/save-list', methods=['POST'])
+def saveList():
+    if request.method == 'POST':
+        data = request.json
+        try:
+            db.save_ranking(data)
+        except:
+            return jsonify({'status': 'error'})
+        return jsonify({'status': 'success'})
 
+@app.route('/load-list', methods=['POST'])
+def loadList():
+    if request.method == 'POST':
+        user_id = request.form['user_id']
+        ranking_id = request.form['ranking_id']
+        result = None
+        try:
+            result = db.get_ranking(user_id, ranking_id)
+        except:
+            return jsonify({'status': 'error'})
+        return jsonify(result)
 
 def get_token():
     token_info = session.get(TOKEN_INFO, None)

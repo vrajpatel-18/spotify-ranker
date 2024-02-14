@@ -1,31 +1,35 @@
+let totalSongs;
+let loggedIn;
+let userId;
 // Check if user is logged in
-if (sessionStorage.getItem('loggedIn') != 'true') {
-    function getUserInfo(callback) {
-        $.ajax({
-            type: 'GET',
-            url: `/user-info`,
-            success: function (data) {
-                if (JSON.stringify(data) !== '{}') {
-                    callback(data);
-                } else {
-                    console.log("data not found");
-                }
+function getUserInfo(callback) {
+    $.ajax({
+        type: 'GET',
+        url: `/user-info`,
+        success: function (data) {
+            if (JSON.stringify(data) !== '{}') {
+                loggedIn = true;
+                callback(data);
+            } else {
+                loggedIn = false;
+            }
+        }
+    });
+}
+function getUserInfoPromise() {
+    return new Promise((resolve, reject) => {
+        getUserInfo(data => {
+            if (JSON.stringify(data) !== '{}') {
+                let accountEl = document.querySelector('.account');
+                userId = data['id'];
+                accountEl.querySelector('.account-text').innerHTML = data['display_name'];
+                accountEl.querySelector('.account-icon').src = data['images'][1]['url'];
+                resolve(data);
+            } else {
+                reject('No user data found');
             }
         });
-    }
-    getUserInfo(function (data) {
-        console.log("logged in");
-        let accountEl = document.querySelector('.account');
-        accountEl.querySelector('.account-text').innerHTML = data['display_name'];
-        accountEl.querySelector('.account-icon').src = data['images'][1]['url'];
-        sessionStorage.setItem('loggedIn', 'true');
-        sessionStorage.setItem('accountName', data['display_name']);
-        sessionStorage.setItem('accountImage', data['images'][1]['url']);
     });
-} else {
-    let accountEl = document.querySelector('.account');
-    accountEl.querySelector('.account-text').innerHTML = sessionStorage.getItem('accountName');
-    accountEl.querySelector('.account-icon').src = sessionStorage.getItem('accountImage');
 }
 
 
@@ -118,7 +122,7 @@ function addAllSongs() {
         let htmlData = `
         <div id="${song.id}" class="${song.classList}">
             <div class="list-song-img-container"><img src="${song.querySelector(".list-song-img").src}" class="list-song-img"></div>
-            <div class="list-song-info">
+            <div class="list-song-info" id="${song.querySelector(".list-song-info").id}">
                 <h3 class="list-song-title">${song.querySelector(".list-song-title").innerHTML}</h3>
                 <h4 class="list-song-break">|</h4>
                 <h6 class="list-song-artist">${song.querySelector(".list-song-artist").innerHTML}</h4>
@@ -148,7 +152,7 @@ function removeAllSongs() {
         let htmlData = `
         <div id="${song.id}" class="${song.classList}">
             <div class="list-song-img-container"><img src="${song.querySelector(".list-song-img").src}" class="list-song-img"></div>
-            <div class="list-song-info">
+            <div class="list-song-info" id="${song.querySelector(".list-song-info").id}">
                 <h3 class="list-song-title">${song.querySelector(".list-song-title").innerHTML}</h3>
                 <h4 class="list-song-break">|</h4>
                 <h6 class="list-song-artist">${song.querySelector(".list-song-artist").innerHTML}</h4>
@@ -181,17 +185,25 @@ function updateSearch() {
                 artist = artist.innerHTML;
                 let index = artist.indexOf(',');
                 if (index != -1) artist = artist.substring(0, index);
-                console.log(typeof artist);
                 songInfo = songInfo.replace(artist, '');
             }
         }
         songInfo = songInfo.replace(',', '').replace('.', '').replace('(', '').replace(')', '').replace("'", '');
-        console.log(songInfo);
         if (songInfo.toLowerCase().includes(search.toLowerCase())) {
             newSongs.push(song);
         }
     });
     newSongs.forEach(function (song) {
+        document.querySelector('.songs-container').appendChild(song);
+    });
+    assignDoubleClick();
+}
+
+function clearSearch() {
+    document.querySelector(".search-bar").value = "";
+    let items = document.querySelector('.songs-container');
+    while (items.firstChild) items.removeChild(items.firstChild);
+    originalSongs.forEach(function (song) {
         document.querySelector('.songs-container').appendChild(song);
     });
     assignDoubleClick();
@@ -210,6 +222,11 @@ function removeSongFromOriginal(songEl) {
 }
 
 function addSongToOriginal(songEl) {
+    originalSongs.forEach(function (song) {
+        if (songEl.id == song.id) {
+            return;
+        }
+    });
     originalSongs.push(songEl);
 }
 
@@ -219,7 +236,7 @@ function doubleClick(song) {
         let htmlData = `
             <div id="${song.id}" class="${song.classList}">
                 <div class="list-song-img-container"><img src="${$(song).find(".list-song-img").attr("src")}" class="list-song-img"></div>
-                <div class="list-song-info">
+                <div class="list-song-info" id="${$(song).find(".list-song-info").id}">
                     <h3 class="list-song-title">${$(song).find(".list-song-title").html()}</h3>
                     <h4 class="list-song-break">|</h4>
                     <h6 class="list-song-artist">${$(song).find(".list-song-artist").html()}</h4>
@@ -245,7 +262,6 @@ function assignDoubleClick() {
 }
 
 function getData(search, type, callback) {
-    console.log('loading...');
     insertLoading();
     $.ajax({
         type: 'POST',
@@ -261,25 +277,26 @@ function getData(search, type, callback) {
 
 
 function buildSongs() {
-    document.querySelector('.songs-container').innerHTML = '';
-    getData(searchID, searchType, function (data) {
-        removeLoading();
-        if (data['songs'].length == 0) {
-            console.log('no songs');
-            insertNoResults();
-        } else {
-            if (searchType == 'album') {
+    return new Promise((resolve, reject) => {
+        document.querySelector('.songs-container').innerHTML = '';
+        getData(searchID, searchType, function (data) {
+            removeLoading();
+            if (data['songs'].length == 0) {
+                insertNoResults();
+            } else {
+                if (searchType == 'album') {
+                    data['songs'].forEach(function (song) {
+                        song['album'] = "";
+                    });
+                }
+                let resultContainer = document.querySelector('.songs-container');
                 data['songs'].forEach(function (song) {
-                    song['album'] = "";
-                });
-            }
-            let resultContainer = document.querySelector('.songs-container');
-            data['songs'].forEach(function (song) {
-                let artists = song['artists'].join(', ');
-                let htmlData = `
+                    let artists = song['artists'].join(', ');
+                    let songType = song['type'] ? `id=${song['type']}` : '';
+                    let htmlData = `
                 <div id="${song['id']}" class="list-song ${song['album']}">
                     <div class="list-song-img-container"><img src="${song['img']}" class="list-song-img"></div>
-                    <div class="list-song-info">
+                    <div class="list-song-info"${songType}>
                         <h3 class="list-song-title">${song['name']}</h3>
                         <h4 class="list-song-break">|</h4>
                         <h6 class="list-song-artist">${artists}</h4>
@@ -287,13 +304,15 @@ function buildSongs() {
                     <div class="list-song-lines-container"><img src="../static/images/lines.png" class="list-song-lines"></div>
                 </div>
                 `;
-                resultContainer.insertAdjacentHTML('beforeend', htmlData);
-            });
-            assignDoubleClick();
-            console.log('done');
-            document.querySelector('.search-bar').classList.remove('hidden');
-            originalSongs = Array.from(document.querySelector('.songs-container').querySelectorAll('.list-song'));
-        }
+                    resultContainer.insertAdjacentHTML('beforeend', htmlData);
+                });
+                assignDoubleClick();
+                document.querySelector('.search-bar').classList.remove('hidden');
+                originalSongs = Array.from(document.querySelector('.songs-container').querySelectorAll('.list-song'));
+                totalSongs = originalSongs.length;
+            }
+            resolve();
+        });
     });
 }
 
@@ -310,18 +329,15 @@ function buildSongs() {
 
 // ON READY
 let searchID = document.querySelector('.list-title').id;
-console.log(searchID);
 let searchType = document.querySelector('.ranker-body').id;
-let name = document.querySelector('.list-title').innerHTML.trim();
-if (name.length > 14) {
+let title = document.querySelector('.list-title').innerHTML.trim();
+if (title.length > 14) {
     let fontSize = 72;
-    for (let i = 14; i < name.length; i++) {
+    for (let i = 14; i < title.length; i++) {
         fontSize -= 1.1;
     }
     document.querySelector('.list-title').style.fontSize = `${fontSize}px`;
 }
-buildSongs();
-
 
 
 
@@ -361,21 +377,130 @@ function removeNoResults() {
 }
 
 
-document.addEventListener("click", function (event) {
-    if (!document.querySelector('.list-options-container').contains(event.target)) {
-        document.querySelector('.list-options-popup').classList.add('hidden');
-    }
-})
 
-// document.querySelector('.list-options-save').addEventListener('click', saveList);
-// function saveList() {
-//     if (sessionStorage.getItem('loggedIn') != 'true') {
-//         document.querySelector('.list-options-popup').classList.remove('hidden');
-//         document.querySelector('.popup-inner').innerHTML = "You must be logged in to save/load a list!";
-//     } else if (sessionStorage.getItem('totalSongs') != document.querySelector('.list-song-container').querySelectorAll('.list-song').length + document.querySelector('.songs-container').querySelectorAll('.list-song').length) {
-//         document.querySelector('.list-options-popup').classList.remove('hidden');
-//         document.querySelector('.popup-inner').innerHTML = "Error saving list. Try removing the search!";
-//     } else {
-//         // save list
-//     }
-// }
+function saveData(savedata, callback) {
+    $.ajax({
+        type: 'POST',
+        url: `/save-list`,
+        contentType: 'application/json',
+        data: JSON.stringify(savedata),
+        dataType: 'json',
+        success: function (data) {
+            callback(data);
+        }
+    });
+}
+
+document.querySelector('.list-options-save').addEventListener('click', saveList);
+function saveList() {
+    if (loggedIn) {
+        clearSearch();
+        let unrankedSongs = Array.from(document.querySelector('.songs-container').querySelectorAll('.list-song'));
+        let rankedSongs = Array.from(document.querySelector('.list-song-container').querySelectorAll('.list-song'));
+        let unrankedArr = [];
+        let rankedArr = [];
+        unrankedSongs.forEach(function (song) {
+            unrankedArr.push(song.id);
+        });
+        rankedSongs.forEach(function (song) {
+            rankedArr.push(song.id);
+        });
+        let data = {
+            'unranked': unrankedArr,
+            'ranked': rankedArr,
+            'type': searchType,
+            'id': searchID,
+            'user_id': userId,
+            'num_unranked': unrankedArr.length,
+            'rank_date': new Date().toISOString().slice(0, 10),
+        }
+        saveData(data, function (data) {
+            if (data['status'] == 'success') {
+                showPopup("List saved!");
+            } else {
+                showPopup("Error saving list!");
+            }
+        });
+    } else {
+        showPopup("You must be logged in to save a list!");
+    }
+}
+
+
+function loadData(userId, rankingId, callback) {
+    $.ajax({
+        type: 'POST',
+        url: `/load-list`,
+        data: { 'user_id': userId, 'ranking_id': rankingId },
+        success: function (data) {
+            callback(data);
+        }
+    });
+}
+
+document.querySelector('.list-options-load').addEventListener('click', loadList);
+function loadList(popup = true) {
+    if (loggedIn) {
+        clearSearch();
+        removeNumber();
+        loadData(userId, searchID, function (data) {
+            if (data['status'] == 'success') {
+                let unranked = data['unranked'];
+                let ranked = data['ranked'];
+                let unrankedArr = [];
+                let rankedArr = [];
+                unranked.forEach(function (song) {
+                    unrankedArr.push(document.getElementById(song));
+                });
+                ranked.forEach(function (song) {
+                    rankedArr.push(document.getElementById(song));
+                });
+                unrankedArr.forEach(function (song) {
+                    document.querySelector('.songs-container').appendChild(song);
+                    addSongToOriginal(song);
+                });
+                rankedArr.forEach(function (song) {
+                    document.querySelector('.list-song-container').appendChild(song);
+                    removeSongFromOriginal(song);
+                    while (Array.from(document.querySelectorAll('.list-number')).length <= rankedArr.length) addNumber();
+                });
+                assignDoubleClick();
+                removeNumber();
+                if (popup) showPopup("List loaded!");
+                else showPopup("List loaded automatically.");
+            } else {
+                if (popup) showPopup("No list found.");
+            }
+        });
+    } else {
+        if (popup) showPopup("You must be logged in to load a list.");
+    }
+}
+
+function showPopup(text) {
+    document.querySelector('.list-options-popup').classList.remove('hidden');
+    document.querySelector('.popup-inner').innerHTML = text;
+    setTimeout(function () {
+        document.querySelector('.list-options-popup').classList.add('hidden');
+    }, 2000);
+}
+
+
+
+
+
+
+
+
+
+
+async function start() {
+    try {
+        await Promise.all([buildSongs(), getUserInfoPromise()]);
+        loadList(false);
+    } catch (error) {
+        console.error('An error occurred:', error);
+    }
+}
+
+start();

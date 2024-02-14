@@ -234,9 +234,12 @@ def getPlaylistSongs(playlistID, offset):
         curr_song['artists'] = artists
         if song['is_local']:
             curr_song['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
-            curr_song['id'] = generateID(song['track']['name'] + song['track']['album']['name'])
+            curr_song['id'] = generateID(song['track']['name'] + song['track']['album']['name'] + artists[0])
+            print('hi')
+            curr_song['type'] = 'local'
         else:
             curr_song['img'] = song['track']['album']['images'][0]['url']
+            curr_song['type'] = 'spotify'
         songs.append(curr_song)
     
     data['songs'] = songs

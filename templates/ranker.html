@@ -15,10 +15,10 @@
     <div class="container-fluid">
         <a href="{{ url_for('index') }}"><h3 class="navbar-title">Spotify Ranker</h3></a>
     </div>
-      <div class="account">
+      <a href="{{ url_for('login', next=request.url) }}"><div class="account">
         <div class="account-text signed-out">Sign In</div>
         <img src="{{ url_for('static', filename='images/user.png') }}" class="account-icon">
-      </div>
+      </div></a>
   </nav>
 
 <div class="ranker-body" id="{{ type }}">

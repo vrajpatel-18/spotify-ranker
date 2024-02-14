@@ -6,11 +6,14 @@ from pprint import pprint
 load_dotenv()
 password = os.environ.get("MONGO_PASSWORD")
 
-login_string = os.environ.get("MONGO_LOGIN_STRING")
+login_string = os.environ.get("MONGO_LOGIN")
 client = MongoClient(login_string)
 
 db = client.get_database('SpotifyRanker')
 users = db.users
+albums = db.albums
+artists = db.artists
+playlists = db.playlists
 
 new_user = {
     'id': 'vrajiepoo',
@@ -29,5 +32,29 @@ new_user = {
     ]
 }
 
-# users.insert_one(new_user)
-print(pprint(list(users.find({}))))
+new_album_ranking = {
+    'id': '0On7uutIu9rZRvP9aJbMog',
+    'unranked': [],
+    'ranked': [
+        "2HALQBSAvpw1oCzL5QsrT2",
+        "08YvUaUsZktAG6zEMDwUqO",
+        "00ZQQArUJReFfsMnl8dIgd",
+        "2VjOTvl50tscmc0RDjPdr2"
+    ],
+    'type': 'album',
+    'user_id': 'vrajiepoo'
+}
+
+# add album to user's rankings array
+users.update_one({'id': 'vrajiepoo'}, {"$pull": {"rankings": {"id": new_album_ranking["id"]}}})
+users.update_one({'id': 'vrajiepoo'}, {'$push': {'rankings': new_album_ranking}})
+
+# add album to albums collection
+filter_criteria = {
+    "id": new_album_ranking['id'],
+    "user_id": new_album_ranking['user_id']
+}
+result = albums.replace_one(filter_criteria, new_album_ranking, upsert=True)
+
+# albums.insert_one(new_album_ranking)
+# print(pprint(list(users.find({}))))

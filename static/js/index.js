@@ -3,39 +3,27 @@ let currTerm = "album";
 let loggedIn = false;
 
 // Check if user is logged in
-if (sessionStorage.getItem('loggedIn') != 'true') {
-    function getUserInfo(callback) {
-        $.ajax({
-            type: 'GET',
-            url: `/user-info`,
-            success: function (data) {
-                if (JSON.stringify(data) !== '{}') {
-                    console.log(data);
-                    callback(data);
-                } else {
-                    console.log("data not found");
-                }
+function getUserInfo(callback) {
+    $.ajax({
+        type: 'GET',
+        url: `/user-info`,
+        success: function (data) {
+            if (JSON.stringify(data) !== '{}') {
+                console.log(data);
+                callback(data);
+            } else {
+                console.log("data not found");
             }
-        });
-    }
-    getUserInfo(function (data) {
-        console.log("logged in");
-        loggedIn = true;
-        let accountEl = document.querySelector('.account');
-        accountEl.querySelector('.account-text').innerHTML = data['display_name'];
-        accountEl.querySelector('.account-icon').src = data['images'][1]['url'];
-        sessionStorage.setItem('loggedIn', 'true');
-        sessionStorage.setItem('accountName', data['display_name']);
-        sessionStorage.setItem('accountImage', data['images'][1]['url']);
-        sessionStorage.setItem('accountID', data['id']);
+        }
     });
-} else {
+}
+getUserInfo(function (data) {
     console.log("logged in");
     loggedIn = true;
     let accountEl = document.querySelector('.account');
-    accountEl.querySelector('.account-text').innerHTML = sessionStorage.getItem('accountName');
-    accountEl.querySelector('.account-icon').src = sessionStorage.getItem('accountImage');
-}
+    accountEl.querySelector('.account-text').innerHTML = data['display_name'];
+    accountEl.querySelector('.account-icon').src = data['images'][1]['url'];
+});
 
 
 
