@@ -18,6 +18,10 @@ app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
 app.secret_key = os.environ.get("APP_SECRET_KEY")
 TOKEN_INFO = 'token_info'
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
 @app.route('/')
 def index():
     return render_template('index.html', **locals())
