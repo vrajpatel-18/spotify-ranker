@@ -413,6 +413,7 @@ function saveList() {
             'user_id': userId,
             'num_unranked': unrankedArr.length,
             'rank_date': new Date().toISOString().slice(0, 10),
+            'name': title,
         }
         saveData(data, function (data) {
             if (data['status'] == 'success') {

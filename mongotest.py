@@ -41,7 +41,7 @@ new_album_ranking = {
         "00ZQQArUJReFfsMnl8dIgd",
         "2VjOTvl50tscmc0RDjPdr2"
     ],
-    'type': 'album',
+    'type': 'artist',
     'user_id': 'vrajiepoo'
 }
 
@@ -54,7 +54,13 @@ filter_criteria = {
     "id": new_album_ranking['id'],
     "user_id": new_album_ranking['user_id']
 }
-result = albums.replace_one(filter_criteria, new_album_ranking, upsert=True)
+if new_album_ranking['type'] == 'album':
+    result = albums.replace_one(filter_criteria, new_album_ranking, upsert=True)
+elif new_album_ranking['type'] == 'artist':
+    result = artists.replace_one(filter_criteria, new_album_ranking, upsert=True)
+elif new_album_ranking['type'] == 'playlist':
+    result = playlists.replace_one(filter_criteria, new_album_ranking, upsert=True)
+print(result)
 
 # albums.insert_one(new_album_ranking)
 # print(pprint(list(users.find({}))))

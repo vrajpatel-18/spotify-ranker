@@ -18,7 +18,6 @@ app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
 app.secret_key = os.environ.get("APP_SECRET_KEY")
 TOKEN_INFO = 'token_info'
 
-
 @app.route('/')
 def index():
     return render_template('index.html', **locals())
@@ -287,6 +286,13 @@ def loadList():
             result = db.get_ranking(user_id, ranking_id)
         except:
             return jsonify({'status': 'error'})
+        return jsonify(result)
+    
+@app.route('/feedback', methods=['POST'])
+def giveFeedback():
+    if request.method == 'POST':
+        message = request.form['feedback']
+        result = db.give_feedback(message)
         return jsonify(result)
 
 def get_token():

@@ -14,6 +14,7 @@ users = db.users
 albums = db.albums
 artists = db.artists
 playlists = db.playlists
+feedback = db.feedback
 
 
 def create_user(user_json):
@@ -73,16 +74,43 @@ def save_ranking(data):
     users.update_one({'id': data['user_id']}, {"$pull": {"rankings": {"id": data["id"]}}})
     users.update_one({'id': data['user_id']}, {'$push': {'rankings': data}})
     
-    # add album to user's rankings_history
-    users.update_one({'id': data['user_id']}, {"$pull": {f"rankings_history.{data['id']}": {"rank_date": data['rank_date']}}})
-    users.update_one({'id': data['user_id']}, {"$push": {f"rankings_history.{data['id']}": data}})
+    # Modify user's rankings_history based on new logic
+    user_id = data['user_id']
+    ranking_id = data['id']
+    
+    # Retrieve the most recent ranking from rankings_history for comparison
+    user = users.find_one({'id': user_id}, {f'rankings_history.{ranking_id}': 1})
+    rankings_history = user.get('rankings_history', {}).get(ranking_id, [])
+    
+    # Check if there's a most recent ranking to compare with
+    if rankings_history:
+        last_ranking = rankings_history[-1]  # Get the most recent ranking
+        # Compare both 'unranked' and 'ranked' lists in the new and most recent rankings
+        if (last_ranking.get('unranked', []) == data.get('unranked', []) and
+            last_ranking.get('ranked', []) == data.get('ranked', [])):
+            # If identical, do not update rankings_history
+            print("Ranking is identical to the most recent one. Not adding to rankings_history.")
+        else:
+            # If different, update rankings_history
+            users.update_one({'id': user_id}, {"$push": {f"rankings_history.{ranking_id}": data}})
+            print("Ranking is different. Added to rankings_history.")
+    else:
+        # If no previous rankings, just add the new ranking
+        users.update_one({'id': user_id}, {"$push": {f"rankings_history.{ranking_id}": data}})
+        print("No previous rankings. Added to rankings_history.")
     
     # add album to albums collection
     filter_criteria = {
         "id": data['id'],
         "user_id": data['user_id']
     }
-    albums.replace_one(filter_criteria, data, upsert=True)
+    if data['type'] == 'album':
+        albums.replace_one(filter_criteria, data, upsert=True)
+    elif data['type'] == 'artist':
+        artists.replace_one(filter_criteria, data, upsert=True)
+    elif data['type'] == 'playlist':
+        playlists.replace_one(filter_criteria, data, upsert=True)
+
     
 # new_album_ranking = {
 #     'id': '0On7uutIu9rZRvP9aJbMog',
@@ -95,6 +123,7 @@ def save_ranking(data):
 #     ],
 #     'type': 'album',
 #     'user_id': 'vrajiepoo'
+#     'rank_date': '2021-08-01'
 # }
 
 
@@ -108,3 +137,9 @@ def get_ranking(user_id, ranking_id):
         'status': 'success'
     }
     return data
+
+
+
+def give_feedback(message):
+    feedback.insert_one({'message': message})
+    return {'status': 'success'}

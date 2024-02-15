@@ -9,7 +9,6 @@ function getUserInfo(callback) {
         url: `/user-info`,
         success: function (data) {
             if (JSON.stringify(data) !== '{}') {
-                console.log(data);
                 callback(data);
             } else {
                 console.log("data not found");
@@ -195,3 +194,50 @@ function removeNoResults() {
         noResults.remove();
     }
 }
+
+
+// add animation to show feedback container and close when clicked outside
+let feedbackPopup = document.querySelector('.feedback-container');
+let feedbackBtn = document.querySelector('.feedback-btn');
+let feedbackBody = document.querySelector('.feedback-body');
+let feedbackSubmit = document.getElementById('feedback-submit');
+let feedbackText = document.getElementById('feedback-text');
+let feedbackMessage = document.querySelector('.feedback-msg');
+feedbackBtn.addEventListener('click', function () {
+    feedbackPopup.classList.toggle('popup-hidden');
+    feedbackMessage.innerHTML = "";
+    feedbackText.value = "";
+});
+document.addEventListener('click', function (e) {
+    if (!feedbackBody.contains(e.target) && !feedbackBtn.contains(e.target)) {
+        feedbackPopup.classList.add('popup-hidden');
+        feedbackMessage.innerHTML = "";
+        feedbackText.value = "";
+    }
+});
+
+
+function sendFeedback(callback) {
+    $.ajax({
+        type: 'POST',
+        url: `/feedback`,
+        data: { 'feedback': feedbackText.value },
+        success: function (data) {
+            // console.log(data);
+            feedbackMessage.innerHTML = "Thank you for your feedback!";
+        },
+        error: function (data) {
+            // console.log(data);
+            feedbackMessage.innerHTML = "There was an error sending your feedback!";
+        }
+    });
+}
+
+// add functionality to feedback form
+feedbackSubmit.addEventListener('click', function () {
+    if (feedbackText.value != "") {
+        sendFeedback();
+    } else {
+        feedbackMessage.innerHTML = "Feedback message cannot be empty!";
+    }
+});
