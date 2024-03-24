@@ -404,8 +404,9 @@ def getArtistName(artistId):
     else:
         return artist_data['name']
     
-def getPlaylistName(artistId):
-    url = 'https://api.spotify.com/v1/playlists/' + artistId
+def getPlaylistName(playlistId):
+    print(playlistId)
+    url = 'https://api.spotify.com/v1/playlists/' + playlistId
     headers = {
         'Authorization': 'Bearer ' + access_token
     }

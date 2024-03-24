@@ -57,6 +57,15 @@ def artist(artistId):
 @app.route('/playlist/<playlistId>')
 def playlist(playlistId):
     playlistName = api.getPlaylistName(playlistId)
+    if playlistName == '':
+        try:
+            token_info = get_token()
+        except:
+            print("User not logged in")
+            return render_template('ranker.html', **{'id': playlistId, 'title': 'ERROR'})    
+        sp = spotipy.Spotify(auth=token_info['access_token'])
+        playlist_data = sp.playlist(playlistId)
+        playlistName = playlist_data["name"]
     content_map = {
         playlistId: {'id': playlistId, 'title': playlistName, 'type': 'playlist'},
     }
@@ -129,8 +138,11 @@ def getPlaylists():
                 curr_playlist = {}
                 curr_playlist['name'] = playlist['name']
                 curr_playlist['id'] = playlist['id']
-                if len(playlist['images']) > 0:
-                    curr_playlist['img'] = playlist['images'][0]['url']
+                if playlist.get('images'):
+                    if len(playlist['images']) > 0:
+                        curr_playlist['img'] = playlist['images'][0]['url']
+                    else:
+                        curr_playlist['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
                 else:
                     curr_playlist['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
                 curr_playlist['owner'] = playlist['owner']['display_name']
@@ -214,6 +226,14 @@ def getPlaylistSongs():
                 curr_song = {}
                 curr_song['name'] = song['track']['name']
                 curr_song['id'] = song['track']['id']
+                if song['track']['type'] == 'episode':
+                    curr_song['date'] = "2999-12-31"
+                    curr_song['album'] = song['track']['name']
+                    curr_song['type'] = 'podcast'
+                    curr_song['artists'] = [song['track']['show']['name']]
+                    curr_song['img'] = song['track']['show']['images'][0]['url']
+                    songs.append(curr_song)
+                    continue
                 curr_song['date'] = song['track']['album']['release_date']
                 curr_song['album'] = song['track']['album']['name']
                 artists = []
