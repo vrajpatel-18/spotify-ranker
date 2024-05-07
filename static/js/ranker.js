@@ -442,10 +442,10 @@ function loadData(userId, rankingId, callback) {
 document.querySelector('.list-options-load').addEventListener('click', loadList);
 function loadList(popup = true) {
     if (loggedIn) {
-        clearSearch();
-        removeNumber();
         loadData(userId, searchID, function (data) {
             if (data['status'] == 'success') {
+                clearSearch();
+                removeNumber();
                 let unranked = data['unranked'];
                 let ranked = data['ranked'];
                 let unrankedArr = [];
