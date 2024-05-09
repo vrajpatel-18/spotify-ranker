@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, url_for, session, redirect
+from flask_talisman import Talisman
 import api, db
 import time
 import json
@@ -13,6 +14,7 @@ client_id_key = os.environ.get("CLIENT_ID")
 client_secret_key = os.environ.get("CLIENT_SECRET")
 
 app = Flask(__name__)
+Talisman(app, content_security_policy=None)
 
 app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
 app.secret_key = os.environ.get("APP_SECRET_KEY")
