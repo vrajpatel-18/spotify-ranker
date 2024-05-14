@@ -4,6 +4,7 @@ import time
 import hashlib
 import base64
 import os
+from flask import session
 from dotenv import load_dotenv
 from datetime import datetime
 
@@ -13,39 +14,15 @@ client_id_key = os.environ.get("CLIENT_ID")
 client_secret_key = os.environ.get("CLIENT_SECRET")
 
 
-# CHECK IF NEW TOKEN NEEDS TO BE GENERATED
-access_token = ''
-url = "https://accounts.spotify.com/api/token"
-headers = {
-    "Content-Type": "application/x-www-form-urlencoded"
-}
-data = {
-    "grant_type": "client_credentials",
-    "client_id": client_id_key,
-    "client_secret": client_secret_key
-}
-
-response = requests.post(url, headers=headers, data=data)
-
-if response.status_code == 200:
-    token_data = response.json()
-    access_token = str(token_data['access_token'])
-    with open('token.json', 'w', encoding='utf-8') as f:
-        json.dump(token_data, f, ensure_ascii=False, indent=4)
-else:
-    print(f"Token request failed with status code {response.status_code}")
-
-with open('token.json', 'r') as f:
-    token_data = json.load(f)
-    access_token = str(token_data['access_token'])
-
-
-
-def get_token():
-    return token_data
+def token():
+    token_info = session.get('token_info', None)
+    if not token_info:
+        return None
+    return token_info
 
 
 def getSongPopularity(songID):
+    access_token = token()['access_token']
     url = 'https://api.spotify.com/v1/tracks/' + songID
     headers = {
         'Authorization': 'Bearer ' + access_token
@@ -69,6 +46,7 @@ def durationGapDays(date1, date2):
 
 
 def getArtists(search):
+    access_token = token()['access_token']
     search = search.replace("#", "")
     print("Get Artists", search)
     searchLimit = '50'
@@ -103,6 +81,7 @@ def getArtists(search):
     
     
 def getAlbums(search):
+    access_token = token()['access_token']
     search = search.replace("#", "")
     print("Get Albums", search)
     searchLimit = '50'
@@ -145,6 +124,7 @@ def getAlbums(search):
 
 
 def getPlaylists(search):
+    access_token = token()['access_token']
     print("Get Playlists", search)
     searchLimit = '10'
     searchType = 'playlist'
@@ -176,6 +156,7 @@ def getPlaylists(search):
 
 
 def getAlbumSongs(albumID):
+    access_token = token()['access_token']
     print("Get Album Songs", albumID)
     url = 'https://api.spotify.com/v1/albums/' + albumID
     headers = {
@@ -208,6 +189,7 @@ def getAlbumSongs(albumID):
 
 
 def getPlaylistSongs(playlistID, offset):
+    access_token = token()['access_token']
     print("Get Playlist Songs", playlistID, access_token)
     url = 'https://api.spotify.com/v1/playlists/' + playlistID + '/tracks?limit=100&offset=' + str(offset)
     headers = {
@@ -272,6 +254,7 @@ def getAllPlaylistSongs(playlistID):
 
 
 def getArtistAlbums(artistID):
+    access_token = token()['access_token']
     print("Get Artist Albums", artistID)
     url = 'https://api.spotify.com/v1/artists/' + artistID + '/albums?include_groups=album'
     headers = {
@@ -304,6 +287,7 @@ def getArtistAlbums(artistID):
 
 
 def getArtistSingles(artistID):
+    access_token = token()['access_token']
     print("Get Artist Singles", artistID)
     url = 'https://api.spotify.com/v1/artists/' + artistID + '/albums?include_groups=single&offset=0&limit=50&locale=en-US,en;q=0.9'
     headers = {
@@ -381,6 +365,7 @@ def getArtistSongs(artistID):
 
 
 def getAlbumName(albumId):
+    access_token = token()['access_token']
     url = 'https://api.spotify.com/v1/albums/' + albumId
     headers = {
         'Authorization': 'Bearer ' + access_token
@@ -394,6 +379,7 @@ def getAlbumName(albumId):
     
     
 def getArtistName(artistId):
+    access_token = token()['access_token']
     url = 'https://api.spotify.com/v1/artists/' + artistId
     headers = {
         'Authorization': 'Bearer ' + access_token
@@ -406,6 +392,7 @@ def getArtistName(artistId):
         return artist_data['name']
     
 def getPlaylistName(playlistId):
+    access_token = token()['access_token']
     print(playlistId)
     url = 'https://api.spotify.com/v1/playlists/' + playlistId
     headers = {

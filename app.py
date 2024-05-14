@@ -6,6 +6,7 @@ import json
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import os
+import requests
 from dotenv import load_dotenv
 
 
@@ -24,12 +25,13 @@ TOKEN_INFO = 'token_info'
 def page_not_found(e):
     return render_template('404.html'), 404
 
-@app.route('/get_token')
-def get_token():
-    return api.get_token()
+@app.route('/token')
+def token():
+    return session.get(TOKEN_INFO)
 
 @app.route('/')
 def index():
+    get_token()
     return render_template('index.html', **locals())
 
 @app.route('/album/<albumId>')
@@ -65,13 +67,16 @@ def playlist(playlistId):
     playlistName = api.getPlaylistName(playlistId)
     if playlistName == '':
         try:
-            token_info = get_token()
+            token_info = get_token(user_specific=True)
+            if not token_info:
+                print("User not logged in")
+                return render_template('ranker.html', **{'id': playlistId, 'title': 'ERROR'})
+            sp = spotipy.Spotify(auth=token_info['access_token'])
+            playlist_data = sp.playlist(playlistId)
+            playlistName = playlist_data["name"]
         except:
-            print("User not logged in")
-            return render_template('ranker.html', **{'id': playlistId, 'title': 'ERROR'})    
-        sp = spotipy.Spotify(auth=token_info['access_token'])
-        playlist_data = sp.playlist(playlistId)
-        playlistName = playlist_data["name"]
+            print("Failed to get user-specific playlist")
+            return render_template('ranker.html', **{'id': playlistId, 'title': 'ERROR'})
     content_map = {
         playlistId: {'id': playlistId, 'title': playlistName, 'type': 'playlist'},
     }
@@ -99,8 +104,6 @@ def redirect_page():
     code = request.args.get('code')
     token_info = create_spotify_oauth().get_access_token(code)
     session[TOKEN_INFO] = token_info
-    with open('token.json', 'w') as file:
-        json.dump(token_info, file, indent=4)
     return redirect(next_url)
 
 
@@ -123,15 +126,24 @@ def getPlaylists():
     if request.method == 'POST':
         search = request.form['search']
         try:
-            token_info = get_token()
+            token_info = get_token(user_specific=True)
+            if not token_info:
+                print("User not logged in")
+                if search == '':
+                    data = {}
+                    return jsonify(data)
+                else:
+                    result = api.getPlaylists(search)
+                    return jsonify(result)
         except:
-            print("User not logged in")
+            print("Failed to get token")
             if search == '':
                 data = {}
                 return jsonify(data)
             else:
                 result = api.getPlaylists(search)
                 return jsonify(result)
+
         def getUserPlaylists(offset):
             print("Get User Playlists, Offset=", offset)
             sp = spotipy.Spotify(auth=token_info['access_token'])
@@ -160,35 +172,35 @@ def getPlaylists():
             formatted_json = json.dumps(json_data, indent=4)
             return formatted_json
 
-    print("Get All User Playlists")
-    offset = 0
-    playlists = []
-    while True:
-        playlist_data = json.loads(getUserPlaylists(offset))
-        if len(playlist_data['playlists']) == 0:
-            break
-        for playlist in playlist_data['playlists']:
-            playlists.append(playlist)
-        offset += 50
-    
-    data = {}
-    data['playlists'] = playlists
-    
-    # implement search functionality
-    if search != '':
-        filtered_playlists = []
-        for playlist in playlists:
-            if search.lower() in playlist['name'].lower():
-                filtered_playlists.append(playlist)
-        result = json.loads(api.getPlaylists(search))
-        for playlist in result['playlists']:
-            filtered_playlists.append(playlist)
-        data['playlists'] = filtered_playlists
-    else:
+        print("Get All User Playlists")
+        offset = 0
+        playlists = []
+        while True:
+            playlist_data = json.loads(getUserPlaylists(offset))
+            if len(playlist_data['playlists']) == 0:
+                break
+            for playlist in playlist_data['playlists']:
+                playlists.append(playlist)
+            offset += 50
+        
+        data = {}
         data['playlists'] = playlists
-    json_data = data
-    formatted_json = json.dumps(json_data, indent=4)
-    return formatted_json
+        
+        # implement search functionality
+        if search != '':
+            filtered_playlists = []
+            for playlist in playlists:
+                if search.lower() in playlist['name'].lower():
+                    filtered_playlists.append(playlist)
+            result = json.loads(api.getPlaylists(search))
+            for playlist in result['playlists']:
+                filtered_playlists.append(playlist)
+            data['playlists'] = filtered_playlists
+        else:
+            data['playlists'] = playlists
+        json_data = data
+        formatted_json = json.dumps(json_data, indent=4)
+        return formatted_json
     
 @app.route('/artist-songs', methods=['POST'])
 def getArtistSongs():
@@ -282,12 +294,10 @@ def getPlaylistSongs():
 @app.route('/user-info', methods=['GET'])
 def getUserInfo():
     if request.method == 'GET':
-        try:
-            token_info = get_token()
-        except:
-            print("User not logged in")
-            data = {}
-            return jsonify(data)
+        token_info = get_token()
+        if not token_info or 'refresh_token' not in token_info:
+            print("User not logged in or invalid token")
+            return redirect(url_for('login'))
         
         session['logged_in'] = True
         sp = spotipy.Spotify(auth=token_info['access_token'])
@@ -325,17 +335,54 @@ def giveFeedback():
         result = db.give_feedback(message)
         return jsonify(result)
 
-def get_token():
+
+def create_client_credentials_token():
+    auth_response = requests.post(
+        "https://accounts.spotify.com/api/token",
+        data={
+            "grant_type": "client_credentials",
+            "client_id": client_id_key,
+            "client_secret": client_secret_key
+        }
+    )
+
+    if auth_response.status_code == 200:
+        token_info = auth_response.json()
+        token_info['expires_at'] = int(time.time()) + token_info['expires_in']
+        session[TOKEN_INFO] = token_info
+        return token_info
+    else:
+        print(f"Client credentials token request failed with status code {auth_response.status_code}")
+        return None
+
+
+def get_token(user_specific=False):
     token_info = session.get(TOKEN_INFO, None)
+    
     if not token_info:
-        redirect(url_for('login', _external=False))
+        if user_specific:
+            return None
+        else:
+            token_info = create_client_credentials_token()
+            if token_info:
+                session[TOKEN_INFO] = token_info
+            else:
+                return None
     
     now = int(time.time())
-
     is_expired = token_info['expires_at'] - now < 60
-    if(is_expired):
-        spotify_oauth = create_spotify_oauth()
-        token_info = spotify_oauth.refresh_access_token(token_info['refresh_token'])
+
+    if is_expired:
+        if 'refresh_token' in token_info:  # User-specific token
+            spotify_oauth = create_spotify_oauth()
+            token_info = spotify_oauth.refresh_access_token(token_info['refresh_token'])
+            session[TOKEN_INFO] = token_info
+        else:  # Client credentials token
+            token_info = create_client_credentials_token()
+            session[TOKEN_INFO] = token_info
+
+    if user_specific and 'refresh_token' not in token_info:
+        return None
 
     return token_info
 
