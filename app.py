@@ -24,6 +24,10 @@ TOKEN_INFO = 'token_info'
 def page_not_found(e):
     return render_template('404.html'), 404
 
+@app.route('/get_token')
+def get_token():
+    return api.get_token()
+
 @app.route('/')
 def index():
     return render_template('index.html', **locals())

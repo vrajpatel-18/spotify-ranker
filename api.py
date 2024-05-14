@@ -41,7 +41,8 @@ with open('token.json', 'r') as f:
 
 
 
-
+def get_token():
+    return token_data
 
 
 def getSongPopularity(songID):
