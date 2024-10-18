@@ -21,7 +21,9 @@ Talisman(app, content_security_policy=None)
 
 # Configure server-side session storage
 app.config['SESSION_TYPE'] = 'redis'
-app.config['SESSION_REDIS'] = Redis.from_url(os.environ.get('REDIS_URL'))
+app.config['SESSION_REDIS'] = Redis.from_url(
+    os.environ.get('REDIS_URL'), ssl_cert_reqs=None
+)
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
 Session(app)  # Set up Flask-Session
