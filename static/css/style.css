@@ -269,9 +269,6 @@ body.home {
     .home-results {
         width: 60% !important;
     }
-    .home-results-item {
-        height: 100px !important;
-    }
 }
 
 @media (max-width: 480px) {
@@ -632,31 +629,31 @@ body.home {
     width: 40%;
     box-shadow: 2px 2px 15px #1BD760;
     z-index: 100;
+    display: flex;
+    flex-direction: column;
 }
 
 .options-container {
     width: 100%;
-    height: 9%;
+    height: 70px;
     display: flex;
-    align-items: end;
-    justify-content: center;
+    align-items: center;
+    justify-content: space-evenly;
+    flex-grow: 0;
 }
 
 .options-container div {
     width: 47%;
-    height: 3.571vw;
-    margin-left: 1%;
-    margin-right: 1%;
-    margin-top: 12px;
+    height: 80%;
     border-radius: 5px;
     background-color: #18181C;
 }
 
 .options-container h3 {
-    font-size: 1.429vw;
     margin: 0 auto;
+    font-size: 24px;
     text-align: center;
-    margin-top: 0.893vw;
+    line-height: 54px;
 }
 
 .options-add:hover {
@@ -681,6 +678,7 @@ body.home {
     padding-top: 74px;
     overflow-y: scroll;
     display: block;
+    flex-grow: 1;
 }
 
 .songs-container .list-song-info {
@@ -806,25 +804,26 @@ body.home {
 
 .right-container-inner {
     width: 80%;
-    height: 90%;
-    margin-top: 5%;
+    height: 100%;
     margin-left: 10%;
+    display: flex;
+    flex-direction: column;
 }
 
 .list-title {
-    font-size: 4.286vw;
+    font-size: 48px;
     margin: 0 auto;
+    margin-top: 20px;
+    margin-bottom: 15px;
     text-align: center;
-    margin-bottom: 1.19vw;
-    height: 5.179vw;
-    padding-left: 4%;
+    flex-grow: 0;
 }
 
 .list-container {
     width: 100%;
     height: 75%;
-    flex: 1;
-    display: block;
+    flex-grow: 1;
+    display: flex;
     overflow-y: scroll;
 }
 
@@ -834,6 +833,7 @@ body.home {
 
 .list-number-container {
     width: 8%;
+    height: 85%;
     display: inline-block;
 }
 
@@ -842,12 +842,12 @@ body.home {
     width: 100%;
     text-align: right;
     margin-bottom: 8px;
-    padding-right: 5px;
+    padding-right: 10px;
     overflow: hidden;
 }
 
 .list-number-text {
-    line-height: 80px;
+    line-height: 58px;
 }
 
 .list-song-container {
@@ -857,17 +857,195 @@ body.home {
 }
 
 .list-song.add {
-    width: 91%;
-    margin-left: 73px;
+    width: 100%;
     margin-top: 10px;
     background-color: #111112 !important;
     color: #A3A3A3 !important;
     background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='10' ry='10' stroke='%23A3A3A3FF' stroke-width='3' stroke-dasharray='6%2c 8' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
     border-radius: 10px;
+    flex-grow: 0;
+}
+.list-song.add .list-song-img-container {
+    width: 64px;
+}
+.list-song.add .list-song-img {
+    margin-left: 0px !important;
 }
 
-.list-song.add .list-song-img {
-    margin-left: 12px !important;
+@media (max-width: 1350px) {
+    .list-song-img-container {
+        width: 10% !important;
+    }
+    .list-title {
+        font-size: 44px !important;
+        margin-top: 16px !important;
+        margin-bottom: 12px !important;
+    }
+    .list-song, .list-number {
+        height: 50px !important;
+    }
+    .list-number-text {
+        line-height: 50px !important;
+        font-size: 24px !important;
+    }
+    .list-song-img {
+        height: 36px !important;
+    }
+    .list-song-title {
+        line-height: 50px !important;
+        font-size: 20px !important;
+    }
+    .list-song-break {
+        font-size: 15px !important;
+        padding-left: 4px !important;
+        padding-right: 2px !important;
+    }
+    .list-song-artist {
+        font-size: 15px !important;
+    }
+    .list-song-lines {
+        height: 18px !important;
+        width: 21px !important;
+        margin-top: 16px !important;
+    }
+    .list-song.add .list-song-title {
+        font-size: 16.5px !important;
+    }
+    .list-options {
+        height: 60px !important;
+    }
+    .list-options h3 {
+        font-size: 20px !important;
+        line-height: 46px !important;
+    }
+    .list-options-save {
+        margin-right: 7px !important;
+    }
+    .list-options-load {
+        margin-left: 7px !important;
+    }
+    .options-container {
+        height: 60px !important;
+    }
+    .options-container h3 {
+        font-size: 20px !important;
+        line-height: 46px !important;
+    }
+}
+
+@media (max-width: 1100px) {
+    .list-title {
+        font-size: 40px !important;
+        margin-top: 14px !important;
+        margin-bottom: 10px !important;
+    }
+    .list-song, .list-number {
+        height: 40px !important;
+    }
+    .list-number-text {
+        line-height: 40px !important;
+        font-size: 20px !important;
+    }
+    .list-song-img {
+        height: 30px !important;
+    }
+    .list-song-title {
+        line-height: 40px !important;
+        font-size: 16px !important;
+    }
+    .list-song-break {
+        font-size: 14px !important;
+        padding-left: 3px !important;
+        padding-right: 2px !important;
+    }
+    .list-song-artist {
+        font-size: 14px !important;
+    }
+    .list-song-lines {
+        height: 16px !important;
+        width: 18px !important;
+        margin-top: 13px !important;
+    }
+    .list-song.add .list-song-title {
+        font-size: 14px !important;
+    }
+    .list-options {
+        height: 50px !important;
+    }
+    .list-options h3 {
+        font-size: 17px !important;
+        line-height: 42px !important;
+    }
+    .list-options-save {
+        margin-right: 5px !important;
+    }
+    .list-options-load {
+        margin-left: 5px !important;
+    }
+    .options-container {
+        height: 50px !important;
+    }
+    .options-container h3 {
+        font-size: 17px !important;
+        line-height: 42px !important;
+    }
+}
+@media (max-width: 950px) {
+    .list-title {
+        font-size: 40px !important;
+        margin-top: 14px !important;
+        margin-bottom: 10px !important;
+    }
+    .list-song, .list-number {
+        height: 38px !important;
+    }
+    .list-number-text {
+        line-height: 38px !important;
+        font-size: 18px !important;
+    }
+    .list-song-img {
+        height: 26px !important;
+    }
+    .list-song-title {
+        line-height: 38px !important;
+        font-size: 14px !important;
+    }
+    .list-song-break {
+        font-size: 12px !important;
+        padding-left: 2.5px !important;
+        padding-right: 1.5px !important;
+    }
+    .list-song-artist {
+        font-size: 12px !important;
+    }
+    .list-song-lines {
+        height: 14px !important;
+        width: 16px !important;
+        margin-top: 11px !important;
+    }
+    .list-song.add .list-song-title {
+        font-size: 11px !important;
+    }
+    .list-options {
+        height: 45px !important;
+    }
+    .list-options h3 {
+        font-size: 15px !important;
+        line-height: 38px !important;
+    }
+    .list-options-save {
+        margin-right: 5px !important;
+    }
+    .list-options-load {
+        margin-left: 5px !important;
+    }
+    .options-container {
+        height: 45px !important;
+    }
+    .options-container h3 {
+        font-size: 14px !important;
+        line-height: 38px !important;
+    }
 }
 
 .list-song {
@@ -889,7 +1067,7 @@ body.home {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 10%;
+    width: 70px;
     height: 100%;
 }
 
@@ -957,15 +1135,16 @@ body.home {
 
 .list-options {
     width: 100%;
-    height: 10%;
+    height: 70px;
     display: flex;
-    align-items: end;
+    align-items: start;
     justify-content: center;
+    flex-grow: 0;
 }
 
 .list-options-container {
     width: 49%;
-    height: 3.571vw;
+    height: 85%;
 }
 
 .list-options-save,
@@ -986,11 +1165,10 @@ body.home {
 }
 
 .list-options h3 {
-    font-size: 1.429vw;
     margin: 0 auto;
     text-align: center;
-    margin-top: 0.893vw;
-    line-height: 3.571vw;
+    font-size: 24px;
+    line-height: 54px;
 }
 
 .list-options-save:hover {
@@ -1073,6 +1251,7 @@ body.home {
     color: white;
     box-shadow: -2px 5px 10px #111112;
     font-size: 16px;
+    flex-grow: 0;
 }
 
 .search-bar:focus {

@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, jsonify, url_for, session, redirect
 from flask_talisman import Talisman
+from flask_session import Session
+from redis import Redis
 import api, db
 import time
 import json
@@ -17,9 +19,15 @@ client_secret_key = os.environ.get("CLIENT_SECRET")
 app = Flask(__name__)
 Talisman(app, content_security_policy=None)
 
+# Configure server-side session storage
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_REDIS'] = Redis.from_url(os.environ.get('REDIS_URL'))
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True
+Session(app)  # Set up Flask-Session
+
 app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
 app.secret_key = os.environ.get("APP_SECRET_KEY")
-TOKEN_INFO = 'token_info'
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -27,7 +35,12 @@ def page_not_found(e):
 
 @app.route('/token')
 def token():
-    return session.get(TOKEN_INFO)
+    user_id = session.get('user_id')
+    return session.get(f'{user_id}_token')
+
+@app.route('/player')
+def player():
+    return render_template('player.html', **locals())
 
 @app.route('/')
 def index():
@@ -41,11 +54,7 @@ def album(albumId):
         albumId: {'id': albumId, 'title': albumName, 'type': 'album'},
     }
     default_content = {'id': albumId, 'title': 'ERROR'}
-    content = None
-    if albumId == '':
-        content = default_content
-    else:
-        content = content_map.get(albumId, default_content)
+    content = content_map.get(albumId, default_content)
     return render_template('ranker.html', **content)
 
 @app.route('/artist/<artistId>')
@@ -55,11 +64,7 @@ def artist(artistId):
         artistId: {'id': artistId, 'title': artistName, 'type': 'artist'},
     }
     default_content = {'id': artistId, 'title': 'ERROR'}
-    content = None
-    if artistId == '':
-        content = default_content
-    else:
-        content = content_map.get(artistId, default_content)
+    content = content_map.get(artistId, default_content)
     return render_template('ranker.html', **content)
 
 @app.route('/playlist/<playlistId>')
@@ -80,12 +85,7 @@ def playlist(playlistId):
     content_map = {
         playlistId: {'id': playlistId, 'title': playlistName, 'type': 'playlist'},
     }
-    default_content = {'id': playlistId, 'title': 'ERROR'}
-    content = None
-    if playlistId == '':
-        content = default_content
-    else:
-        content = content_map.get(playlistId, default_content)
+    content = content_map.get(playlistId, {'id': playlistId, 'title': 'ERROR'})
     return render_template('ranker.html', **content)
 
 @app.route('/login')
@@ -95,17 +95,17 @@ def login():
     auth_url = create_spotify_oauth().get_authorize_url()
     return redirect(auth_url)
 
-
 @app.route('/redirect')
 def redirect_page():
     next_url = session.get('next_url')
-    print("Redirecting to:", next_url)
     session.clear()
     code = request.args.get('code')
     token_info = create_spotify_oauth().get_access_token(code)
-    session[TOKEN_INFO] = token_info
+    user_info = token_info.get('user_info')  # Retrieve user info (such as user_id from Spotify)
+    user_id = user_info['id'] if user_info else None
+    session['user_id'] = user_id  # Store user_id in the session
+    session[f'{user_id}_token'] = token_info  # Store token for the specific user
     return redirect(next_url)
-
 
 @app.route('/artist', methods=['POST'])
 def getArtists():
@@ -113,7 +113,7 @@ def getArtists():
         search = request.form['search']
         result = api.getArtists(search)
         return jsonify(result)
-    
+
 @app.route('/album', methods=['POST'])
 def getAlbums():
     if request.method == 'POST':
@@ -130,92 +130,28 @@ def getPlaylists():
             if not token_info:
                 print("User not logged in")
                 if search == '':
-                    data = {}
-                    return jsonify(data)
+                    return jsonify({})
                 else:
                     result = api.getPlaylists(search)
                     return jsonify(result)
         except:
             print("Failed to get token")
-            if search == '':
-                data = {}
-                return jsonify(data)
-            else:
-                result = api.getPlaylists(search)
-                return jsonify(result)
+            return jsonify({})
 
-        def getUserPlaylists(offset):
-            print("Get User Playlists, Offset=", offset)
-            sp = spotipy.Spotify(auth=token_info['access_token'])
-            playlist_data = sp.current_user_playlists(50, offset)
-            playlists = []
-            data = {}
-            if playlist_data['total'] == 0:
-                return json.dumps(data, indent=4)
-            for playlist in playlist_data['items']:
-                curr_playlist = {}
-                curr_playlist['name'] = playlist['name']
-                curr_playlist['id'] = playlist['id']
-                if playlist.get('images'):
-                    if len(playlist['images']) > 0:
-                        curr_playlist['img'] = playlist['images'][0]['url']
-                    else:
-                        curr_playlist['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
-                else:
-                    curr_playlist['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
-                curr_playlist['owner'] = playlist['owner']['display_name']
-                playlists.append(curr_playlist)
-            
-            data['playlists'] = playlists
-            
-            json_data = data
-            formatted_json = json.dumps(json_data, indent=4)
-            return formatted_json
-
-        print("Get All User Playlists")
-        offset = 0
-        playlists = []
-        while True:
-            playlist_data = json.loads(getUserPlaylists(offset))
-            if len(playlist_data['playlists']) == 0:
-                break
-            for playlist in playlist_data['playlists']:
-                playlists.append(playlist)
-            offset += 50
-        
-        data = {}
-        data['playlists'] = playlists
-        
-        # implement search functionality
-        if search != '':
-            filtered_playlists = []
-            for playlist in playlists:
-                if search.lower() in playlist['name'].lower():
-                    filtered_playlists.append(playlist)
-            result = json.loads(api.getPlaylists(search))
-            for playlist in result['playlists']:
-                filtered_playlists.append(playlist)
-            data['playlists'] = filtered_playlists
-        else:
-            data['playlists'] = playlists
-        json_data = data
-        formatted_json = json.dumps(json_data, indent=4)
-        return formatted_json
-    
 @app.route('/artist-songs', methods=['POST'])
 def getArtistSongs():
     if request.method == 'POST':
         search = request.form['search']
         result = api.getArtistSongs(search)
         return jsonify(result)
-    
+
 @app.route('/album-songs', methods=['POST'])
 def getAlbumSongs():
     if request.method == 'POST':
         search = request.form['search']
         result = api.getAlbumSongs(search)
         return jsonify(result)
-    
+
 @app.route('/playlist-songs', methods=['POST'])
 def getPlaylistSongs():
     if request.method == 'POST':
@@ -224,73 +160,9 @@ def getPlaylistSongs():
             token_info = get_token()
         except:
             print("User not logged in")
-            data = {}
-            return jsonify(data)
-        def getPlaylistSongs(playlistID, offset):
-            print("Get Playlist Songs", playlistID, "Offset=", offset)
-            sp = spotipy.Spotify(auth=token_info['access_token'])
-            playlist_data = sp.playlist_items(playlistID, None, 100, offset)
-            
-            songs = []
-            data = {}
-            if 'items' not in playlist_data:
-                data['songs'] = songs
-                json_data = data
-                formatted_json = json.dumps(json_data, indent=4)
-                return formatted_json
-            for song in playlist_data['items']:
-                if song['track'] == None:
-                    continue
-                curr_song = {}
-                curr_song['name'] = song['track']['name']
-                curr_song['id'] = song['track']['id']
-                if song['track']['type'] == 'episode':
-                    curr_song['date'] = "2999-12-31"
-                    curr_song['album'] = song['track']['name']
-                    curr_song['type'] = 'podcast'
-                    curr_song['artists'] = [song['track']['show']['name']]
-                    curr_song['img'] = song['track']['show']['images'][0]['url']
-                    songs.append(curr_song)
-                    continue
-                curr_song['date'] = song['track']['album']['release_date']
-                curr_song['album'] = song['track']['album']['name']
-                artists = []
-                for artist in song['track']['artists']:
-                    artists.append(artist['name'])
-                curr_song['artists'] = artists
-                if song['is_local']:
-                    curr_song['img'] = 'https://player.listenlive.co/templates/StandardPlayerV4/webroot/img/default-cover-art.png'
-                    curr_song['id'] = api.generateID(song['track']['name'] + song['track']['album']['name'])
-                    curr_song['type'] = 'local'
-                else:
-                    curr_song['img'] = song['track']['album']['images'][0]['url']
-                    curr_song['type'] = 'spotify'
-                songs.append(curr_song)
-            
-            data['songs'] = songs
-            
-            json_data = data
-            formatted_json = json.dumps(json_data, indent=4)
-            return formatted_json
-        print("Get All Playlist Songs", search)
-        offset = 0
-        songs = []
-        while True:
-            playlist_data = json.loads(getPlaylistSongs(search, offset))
-            if len(playlist_data['songs']) == 0:
-                break
-            for song in playlist_data['songs']:
-                songs.append(song)
-            offset += 100
-        
-        data = {}
-        data['songs'] = songs
-        
-        json_data = data
-        formatted_json = json.dumps(json_data, indent=4)
-        return formatted_json
-    
-    
+            return jsonify({})
+        return jsonify(api.getPlaylistSongs(search))
+
 @app.route('/user-info', methods=['GET'])
 def getUserInfo():
     if request.method == 'GET':
@@ -298,14 +170,13 @@ def getUserInfo():
         if not token_info or 'refresh_token' not in token_info:
             print("User not logged in or invalid token")
             return redirect(url_for('login'))
-        
+
         session['logged_in'] = True
         sp = spotipy.Spotify(auth=token_info['access_token'])
         user_info = sp.current_user()
         db.create_user(user_info)
         return jsonify(user_info)
-    
-    
+
 @app.route('/save-list', methods=['POST'])
 def saveList():
     if request.method == 'POST':
@@ -321,20 +192,18 @@ def loadList():
     if request.method == 'POST':
         user_id = request.form['user_id']
         ranking_id = request.form['ranking_id']
-        result = None
         try:
             result = db.get_ranking(user_id, ranking_id)
         except:
             return jsonify({'status': 'error'})
         return jsonify(result)
-    
+
 @app.route('/feedback', methods=['POST'])
 def giveFeedback():
     if request.method == 'POST':
         message = request.form['feedback']
         result = db.give_feedback(message)
         return jsonify(result)
-
 
 def create_client_credentials_token():
     auth_response = requests.post(
@@ -349,15 +218,14 @@ def create_client_credentials_token():
     if auth_response.status_code == 200:
         token_info = auth_response.json()
         token_info['expires_at'] = int(time.time()) + token_info['expires_in']
-        session[TOKEN_INFO] = token_info
         return token_info
     else:
         print(f"Client credentials token request failed with status code {auth_response.status_code}")
         return None
 
-
 def get_token(user_specific=False):
-    token_info = session.get(TOKEN_INFO, None)
+    user_id = session.get('user_id')
+    token_info = session.get(f'{user_id}_token', None)
     
     if not token_info:
         if user_specific:
@@ -365,24 +233,21 @@ def get_token(user_specific=False):
         else:
             token_info = create_client_credentials_token()
             if token_info:
-                session[TOKEN_INFO] = token_info
+                session[f'{user_id}_token'] = token_info
             else:
                 return None
-    
+
     now = int(time.time())
     is_expired = token_info['expires_at'] - now < 60
 
     if is_expired:
-        if 'refresh_token' in token_info:  # User-specific token
+        if 'refresh_token' in token_info:
             spotify_oauth = create_spotify_oauth()
             token_info = spotify_oauth.refresh_access_token(token_info['refresh_token'])
-            session[TOKEN_INFO] = token_info
-        else:  # Client credentials token
+            session[f'{user_id}_token'] = token_info
+        else:
             token_info = create_client_credentials_token()
-            session[TOKEN_INFO] = token_info
-
-    if user_specific and 'refresh_token' not in token_info:
-        return None
+            session[f'{user_id}_token'] = token_info
 
     return token_info
 
@@ -393,7 +258,6 @@ def create_spotify_oauth():
         redirect_uri = url_for('redirect_page', _external=True),
         scope='playlist-read-private playlist-read-collaborative user-read-private'
     )
-
 
 
 if __name__ == '__main__':

@@ -331,13 +331,13 @@ function buildSongs() {
 let searchID = document.querySelector('.list-title').id;
 let searchType = document.querySelector('.ranker-body').id;
 let title = document.querySelector('.list-title').innerHTML.trim();
-if (title.length > 14) {
-    let fontSize = 72;
-    for (let i = 14; i < title.length; i++) {
-        fontSize -= 1.1;
-    }
-    document.querySelector('.list-title').style.fontSize = `${fontSize}px`;
-}
+// if (title.length > 14) {
+//     let fontSize = 72;
+//     for (let i = 14; i < title.length; i++) {
+//         fontSize -= 1.1;
+//     }
+//     document.querySelector('.list-title').style.fontSize = `${fontSize}px`;
+// }
 
 
 
