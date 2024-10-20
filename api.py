@@ -13,12 +13,44 @@ load_dotenv()
 client_id_key = os.environ.get("CLIENT_ID")
 client_secret_key = os.environ.get("CLIENT_SECRET")
 
+def create_client_credentials_token():
+    auth_response = requests.post(
+        "https://accounts.spotify.com/api/token",
+        data={
+            "grant_type": "client_credentials",
+            "client_id": client_id_key,
+            "client_secret": client_secret_key
+        }
+    )
+
+    if auth_response.status_code == 200:
+        token_info = auth_response.json()
+        token_info['expires_at'] = int(time.time()) + token_info['expires_in']
+        return token_info
+    else:
+        print(f"Failed to obtain client credentials token: {auth_response.status_code}")
+        return None
+
 
 def token():
-    token_info = session.get('token_info', None)
-    if not token_info:
-        return None
-    return token_info
+    # Get the logged-in user's token from the session
+    user_id = session.get('user_id', None)
+    user_token_info = session.get(f'{user_id}_token', None)  # Use {user_id}_token
+    print(user_token_info)
+
+    if user_token_info:
+        # Return the logged-in user's token
+        return user_token_info
+    
+    # If the user is not logged in, use a default access token
+    default_token_info = session.get('default_token_info', None)
+    
+    if not default_token_info:
+        # Generate a new default token if not found in the session
+        default_token_info = create_client_credentials_token()
+        session['default_token_info'] = default_token_info
+    
+    return default_token_info
 
 
 def getSongPopularity(songID):

@@ -100,14 +100,32 @@ def login():
 @app.route('/redirect')
 def redirect_page():
     next_url = session.get('next_url')
-    session.clear()
     code = request.args.get('code')
+    print(f"Authorization code: {code}")
+    
+    # Get access token from Spotify
     token_info = create_spotify_oauth().get_access_token(code)
-    user_info = token_info.get('user_info')  # Retrieve user info (such as user_id from Spotify)
-    user_id = user_info['id'] if user_info else None
-    session['user_id'] = user_id  # Store user_id in the session
-    session[f'{user_id}_token'] = token_info  # Store token for the specific user
+    print(f"Token info: {token_info}")
+
+    # Get user information from Spotify
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    user_info = sp.current_user()
+
+    if not user_info:
+        print("User info not retrieved. Redirecting to login.")
+        return redirect(url_for('login'))
+
+    # Store user ID and token in the session
+    user_id = user_info['id']
+    session.clear()  # Clear session except next_url
+    session['next_url'] = next_url
+    session['user_id'] = user_id
+    session[f'{user_id}_token'] = token_info
+    print(f"Session data after login: {session}")
+
+    # Redirect to the next page
     return redirect(next_url)
+
 
 @app.route('/artist', methods=['POST'])
 def getArtists():
@@ -132,13 +150,14 @@ def getPlaylists():
             if not token_info:
                 print("User not logged in")
                 if search == '':
-                    return jsonify({})
+                    return jsonify({})  # Return empty data if search is empty
                 else:
-                    result = api.getPlaylists(search)
-                    return jsonify(result)
-        except:
-            print("Failed to get token")
-            return jsonify({})
+                    result = api.getPlaylists(search)  # Call your API to get playlists
+                    return jsonify(result)  # Return the result
+        except Exception as e:
+            print(f"Failed to get token or playlists: {e}")
+            return jsonify({'error': 'Failed to retrieve playlists'}), 500  # Return an error response
+
 
 @app.route('/artist-songs', methods=['POST'])
 def getArtistSongs():
@@ -167,17 +186,17 @@ def getPlaylistSongs():
 
 @app.route('/user-info', methods=['GET'])
 def getUserInfo():
-    if request.method == 'GET':
-        token_info = get_token()
-        if not token_info or 'refresh_token' not in token_info:
-            print("User not logged in or invalid token")
-            return redirect(url_for('login'))
+    token_info = get_token(user_specific=True)
+    
+    if not token_info or 'refresh_token' not in token_info:
+        print("User not logged in or invalid token")
+        return redirect(url_for('login'))
 
-        session['logged_in'] = True
-        sp = spotipy.Spotify(auth=token_info['access_token'])
-        user_info = sp.current_user()
-        db.create_user(user_info)
-        return jsonify(user_info)
+    session['logged_in'] = True
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    user_info = sp.current_user()
+    db.create_user(user_info)
+    return jsonify(user_info)
 
 @app.route('/save-list', methods=['POST'])
 def saveList():
@@ -231,18 +250,21 @@ def get_token(user_specific=False):
     
     if not token_info:
         if user_specific:
+            print("No user-specific token found, returning None")
             return None
         else:
             token_info = create_client_credentials_token()
             if token_info:
                 session[f'{user_id}_token'] = token_info
             else:
+                print("Failed to create default token")
                 return None
 
     now = int(time.time())
     is_expired = token_info['expires_at'] - now < 60
 
     if is_expired:
+        print("Token expired, refreshing token")
         if 'refresh_token' in token_info:
             spotify_oauth = create_spotify_oauth()
             token_info = spotify_oauth.refresh_access_token(token_info['refresh_token'])
@@ -252,6 +274,14 @@ def get_token(user_specific=False):
             session[f'{user_id}_token'] = token_info
 
     return token_info
+
+  
+
+@app.route('/check-session')
+def check_session():
+    return jsonify(dict(session))
+
+
 
 def create_spotify_oauth():
     return SpotifyOAuth(
